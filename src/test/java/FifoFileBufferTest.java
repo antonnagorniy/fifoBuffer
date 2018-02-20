@@ -10,11 +10,11 @@ import java.sql.Timestamp;
  * on 20.02.2018.
  */
 public class FifoFileBufferTest extends TestCase {
-    protected Timestamp timestamp;
-    FifoFileBuffer<Timestamp> bufferTimestamp;
-    FifoFileBuffer<String> bufferString;
+    private Timestamp timestamp;
+    private String testString;
+    private FifoFileBuffer<Timestamp> bufferTimestamp;
+    private FifoFileBuffer<String> bufferString;
 
-    String testString;
 
     protected void setUp() {
         timestamp = new Timestamp(System.currentTimeMillis());

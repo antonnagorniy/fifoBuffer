@@ -8,13 +8,21 @@ import java.sql.Timestamp;
  * on 17.02.2018.
  */
 public class Producer implements Runnable {
-    private final long produceFrequency;
 
-    public Producer(long produceFrequency) {
-        this.produceFrequency = produceFrequency;
+    private final FifoBuffer buffer;
+
+    public Producer(FifoBuffer buffer) {
+        this.buffer = buffer;
     }
 
     public void run() {
-
+        while(true) {
+            try {
+                buffer.put(new Timestamp(System.currentTimeMillis()));
+                Thread.sleep(3000);
+            }catch(InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

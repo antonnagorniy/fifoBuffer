@@ -9,9 +9,9 @@ import java.sql.Timestamp;
  */
 public class Producer implements Runnable {
 
-    private final FifoBuffer buffer;
+    private final FifoFileBuffer buffer;
 
-    public Producer(FifoBuffer buffer) {
+    public Producer(FifoFileBuffer buffer) {
         this.buffer = buffer;
     }
 

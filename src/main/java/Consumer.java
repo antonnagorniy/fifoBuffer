@@ -6,9 +6,9 @@
  */
 public class Consumer implements Runnable {
 
-    private final FifoBuffer buffer;
+    private final FifoFileBuffer buffer;
 
-    public Consumer(FifoBuffer buffer) {
+    public Consumer(FifoFileBuffer buffer) {
         this.buffer = buffer;
     }
 

@@ -12,15 +12,19 @@ import java.sql.Timestamp;
 public class FifoFileBufferTest extends TestCase {
     private Timestamp timestamp;
     private String testString;
+    private Integer integer;
     private FifoFileBuffer<Timestamp> bufferTimestamp;
     private FifoFileBuffer<String> bufferString;
+    private FifoFileBuffer<Integer> bufferInteger;
 
 
     protected void setUp() {
-        timestamp = new Timestamp(System.currentTimeMillis());
         bufferTimestamp = new FifoFileBuffer<>();
         bufferString = new FifoFileBuffer<>();
+        bufferInteger = new FifoFileBuffer<>();
+        timestamp = new Timestamp(System.currentTimeMillis());
         testString = "TestString";
+        integer = 1789;
     }
 
     @Test
@@ -35,6 +39,13 @@ public class FifoFileBufferTest extends TestCase {
         bufferString.put(testString);
 
         assertEquals(bufferString.poll(), testString);
+    }
+
+    @Test
+    public void testPutInteger() {
+        bufferInteger.put(integer);
+
+        assertEquals(bufferInteger.poll(), integer);
     }
 
 }

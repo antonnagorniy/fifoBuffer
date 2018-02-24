@@ -50,9 +50,10 @@ public class Main {
                     System.err.println(e.getMessage());
                 }
 
-                Instant end = Instant.now();
                 System.out.println("Produced: " + buffer.getProducedItems());
                 System.out.println("Consumed: " + buffer.getConsumedItems());
+
+                Instant end = Instant.now();
                 System.out.println("Working time: " + Duration.between(start, end).toString().replaceAll("PT", ""));
             }
         };

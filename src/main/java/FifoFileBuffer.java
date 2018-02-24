@@ -11,7 +11,7 @@ import java.util.concurrent.BlockingQueue;
 
 public class FifoFileBuffer<T> {
     private final Object lock = new Object();
-    private File dataFile;
+    private final File dataFile;
     private int size;
     private long producedItems;
     private long consumedItems;

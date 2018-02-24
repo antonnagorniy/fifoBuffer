@@ -4,6 +4,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by
@@ -61,6 +63,27 @@ public class FifoFileBufferTest extends TestCase {
         }catch(Exception e) {
             System.err.println(e);
         }
+    }
+
+    @Test
+    public void testFifo() {
+       List<String> stringsList = new ArrayList<>();
+
+       for(int i = 0; i < 20; i++) {
+           stringsList.add(i, "String " + i);
+       }
+
+       for(String str : stringsList) {
+           bufferString.put(str);
+       }
+
+       try {
+           for(String str : stringsList) {
+               assertEquals(str + " is in incorrect order.", str, bufferString.take());
+           }
+       }catch(Exception e) {
+           System.err.println(e.getMessage());
+       }
     }
 
     @After

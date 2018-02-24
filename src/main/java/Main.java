@@ -1,3 +1,6 @@
+import java.time.Duration;
+import java.time.Instant;
+
 /**
  * Created by
  *
@@ -27,7 +30,7 @@
 public class Main {
     public static void main(String[] args) {
 
-        long startTime = System.currentTimeMillis();
+        Instant start = Instant.now();
 
         FifoFileBuffer buffer = new FifoFileBuffer();
 
@@ -47,10 +50,10 @@ public class Main {
                     System.err.println(e.getMessage());
                 }
 
-                long currentTime = System.currentTimeMillis();
+                Instant end = Instant.now();
                 System.out.println("Produced: " + buffer.getProducedItems());
                 System.out.println("Consumed: " + buffer.getConsumedItems());
-                System.out.println("Working time: " + ((currentTime - startTime) / 1000));
+                System.out.println("Working time: " + Duration.between(start, end).toString().replaceAll("PT", ""));
             }
         };
 

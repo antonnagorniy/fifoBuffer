@@ -1,6 +1,4 @@
 import java.io.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 
 /**
  * Created by
@@ -22,9 +20,6 @@ public class FifoFileBuffer<T> {
 
     FileInputStream fileReader;
     ObjectInputStream objectInputStream;
-
-
-    BlockingQueue<String> queue = new ArrayBlockingQueue<>(10);
 
     public FifoFileBuffer() {
         this.dataFile = new File("data.tmp");

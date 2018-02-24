@@ -1,3 +1,5 @@
+package com.chikchiksoftware;
+
 /**
  * Created by
  *
@@ -13,12 +15,13 @@ public class Consumer implements Runnable {
     }
 
     public void run() {
-        while(true) {
+        boolean done = false;
+        do{
             try {
                 System.out.println(Thread.currentThread().getName() + " Consumed " + buffer.take());
             }catch(Exception e) {
-                System.err.println(e.getMessage());
+                done = true;
             }
-        }
+        }while(!done);
     }
 }

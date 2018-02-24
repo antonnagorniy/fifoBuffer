@@ -1,3 +1,4 @@
+package com.chikchiksoftware;
 
 import java.sql.Timestamp;
 
@@ -24,7 +25,7 @@ public class Producer implements Runnable {
         long start = System.currentTimeMillis();
         long end = 0;
 
-        while((end - start) <= timeToWork) {
+        while((end - start) < timeToWork) {
             try {
                 buffer.put(new Timestamp(System.currentTimeMillis()));
                 Thread.sleep(generateFrequencySeconds);

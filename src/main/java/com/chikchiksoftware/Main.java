@@ -1,6 +1,8 @@
-import service.UserInteractions;
+package com.chikchiksoftware;
 
-import java.time.Duration;
+import com.chikchiksoftware.service.Timer;
+import com.chikchiksoftware.service.UserInteractions;
+
 import java.time.Instant;
 
 /**
@@ -30,19 +32,21 @@ import java.time.Instant;
 */
 
 public class Main {
+    private static Instant start;
+    private static UserInteractions interactions = new UserInteractions();
+
     public static void main(String[] args) {
-        UserInteractions interactions = new UserInteractions();
 
         interactions.askForProducersQuantity();
         interactions.askForConsumersQuantity();
         interactions.askForFrequency();
         interactions.askForProducerTimeToWork();
 
-        Instant start = Instant.now();
+        start = Instant.now();
 
         FifoFileBuffer buffer = new FifoFileBuffer();
 
-        for(int i = 0; i < 15; i++) {
+        for(int i = 0; i < interactions.getProducersCount(); i++) {
             new Thread(new Producer(
                     buffer,
                     interactions.getFrequency(),
@@ -50,11 +54,17 @@ public class Main {
             ).start();
         }
 
-        for(int i = 0; i < 3; i++) {
+        Thread timer = new Thread(new Timer(buffer, start));
+        timer.setDaemon(true);
+        timer.start();
+
+        for(int i = 0; i < interactions.getConsumersCount(); i++) {
             new Thread(new Consumer(buffer)).start();
         }
 
-        Runnable timer = () -> {
+
+
+        /*Runnable timer = () -> {
             while(true) {
                 try {
                     Thread.sleep(10000);
@@ -62,15 +72,14 @@ public class Main {
                     System.err.println(e.getMessage());
                 }
 
+                end = Instant.now();
                 System.out.println("Produced: " + buffer.getProducedItems());
                 System.out.println("Consumed: " + buffer.getConsumedItems());
-
-                Instant end = Instant.now();
                 System.out.println("Working time: " + Duration.between(start, end).toString().replaceAll("PT", ""));
             }
         };
 
-        new Thread(timer).start();
+        new Thread(timer).start();*/
 
 
     }

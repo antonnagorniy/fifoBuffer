@@ -1,3 +1,5 @@
+package com.chikchiksoftware;
+
 import java.io.*;
 
 /**
@@ -56,16 +58,18 @@ public class FifoFileBuffer<T> {
 
     public T take() throws Exception {
         synchronized(lock) {
-            if(getSize() == 0) {
+            while(size == 0 && producedItems != consumedItems) {
                 lock.wait();
             }
+
 
             this.currentItem = (T) objectInputStream.readObject();
             Thread.sleep(150);
             checkNotNull(currentItem);
+            T result = currentItem;
             size--;
             consumedItems++;
-            return currentItem;
+            return result;
         }
     }
 

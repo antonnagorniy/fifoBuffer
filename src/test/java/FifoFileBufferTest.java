@@ -1,3 +1,4 @@
+import com.chikchiksoftware.FifoFileBuffer;
 import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.Before;

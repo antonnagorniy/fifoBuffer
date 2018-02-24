@@ -29,15 +29,15 @@ public class UserInteractions {
     }
 
     public void askForFrequency() {
-        System.out.println("Input data generation frequency: ");
+        System.out.println("Input data generation frequency(milliseconds): ");
 
-        this.frequency = (long) scanForNumbers();
+        this.frequency = scanForNumbers().longValue();
     }
 
     public void askForProducerTimeToWork() {
-        System.out.println("Input Producers time to work: ");
+        System.out.println("Input Producers time to work(seconds): ");
 
-        this.producerTimeToWork = scanForNumbers().longValue();
+        this.producerTimeToWork = scanForNumbers().longValue() * 1000;
     }
 
     private Number scanForNumbers() {
@@ -57,6 +57,9 @@ public class UserInteractions {
         return number;
     }
 
+    public void close() {
+        scanner.close();
+    }
 
 
     public long getFrequency() {

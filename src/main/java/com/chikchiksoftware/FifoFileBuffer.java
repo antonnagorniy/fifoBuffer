@@ -12,10 +12,9 @@ import java.io.*;
 public class FifoFileBuffer<T> {
     private final Object lock = new Object();
     private final File dataFile;
-    private int size;
     private long producedItems;
     private long consumedItems;
-    private T currentItem;
+    private int size;
 
     FileOutputStream fileWriter;
     ObjectOutputStream objectOutputStream;
@@ -25,7 +24,7 @@ public class FifoFileBuffer<T> {
 
     public FifoFileBuffer() {
         this.dataFile = new File("data.tmp");
-
+        dataFile.deleteOnExit();
         try {
             fileWriter = new FileOutputStream(this.dataFile);
             objectOutputStream = new ObjectOutputStream(fileWriter);
@@ -49,26 +48,22 @@ public class FifoFileBuffer<T> {
                 System.err.println(e.getMessage());
             }
 
-            System.out.println(Thread.currentThread().getName() + " Produced " + data);
-            lock.notify();
+            lock.notifyAll();
         }
 
 
     }
 
-    public T take() throws Exception {
+    public T take() throws InterruptedException, ClassNotFoundException, IOException{
         synchronized(lock) {
-            while(size == 0 && producedItems != consumedItems) {
+            while(isEmpty()) {
                 lock.wait();
             }
 
-
-            this.currentItem = (T) objectInputStream.readObject();
-            Thread.sleep(150);
-            checkNotNull(currentItem);
-            T result = currentItem;
+            T result = (T) objectInputStream.readObject();
             size--;
             consumedItems++;
+            lock.notifyAll();
             return result;
         }
     }
@@ -83,6 +78,10 @@ public class FifoFileBuffer<T> {
             throw new NullPointerException();
     }
 
+    public boolean isEmpty() {
+        return size == 0;
+    }
+
     public int getSize() {
         return size;
     }
@@ -94,4 +93,6 @@ public class FifoFileBuffer<T> {
     public long getConsumedItems() {
         return consumedItems;
     }
+
+
 }

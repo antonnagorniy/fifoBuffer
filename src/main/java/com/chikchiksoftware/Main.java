@@ -34,6 +34,8 @@ import java.time.Instant;
 public class Main {
     private static Instant start;
     private static UserInteractions interactions = new UserInteractions();
+    private static ThreadGroup producers = new ThreadGroup("Producers");
+    private static ThreadGroup consumers = new ThreadGroup("Consumers");
 
     public static void main(String[] args) {
 
@@ -41,16 +43,15 @@ public class Main {
         interactions.askForConsumersQuantity();
         interactions.askForFrequency();
         interactions.askForProducerTimeToWork();
+        interactions.close();
 
         start = Instant.now();
 
         FifoFileBuffer buffer = new FifoFileBuffer();
 
         for(int i = 0; i < interactions.getProducersCount(); i++) {
-            new Thread(new Producer(
-                    buffer,
-                    interactions.getFrequency(),
-                    interactions.getProducerTimeToWork())
+            new Thread(producers, new Producer(buffer,
+                    interactions.getFrequency(), interactions.getProducerTimeToWork())
             ).start();
         }
 
@@ -59,28 +60,17 @@ public class Main {
         timer.start();
 
         for(int i = 0; i < interactions.getConsumersCount(); i++) {
-            new Thread(new Consumer(buffer)).start();
+            new Thread(consumers, new Consumer(buffer)).start();
         }
 
+        /*try {
+            Thread.sleep(interactions.getProducerTimeToWork());
+        }catch(InterruptedException e) {
+            e.printStackTrace();
+        }
 
-
-        /*Runnable timer = () -> {
-            while(true) {
-                try {
-                    Thread.sleep(10000);
-                }catch(InterruptedException e) {
-                    System.err.println(e.getMessage());
-                }
-
-                end = Instant.now();
-                System.out.println("Produced: " + buffer.getProducedItems());
-                System.out.println("Consumed: " + buffer.getConsumedItems());
-                System.out.println("Working time: " + Duration.between(start, end).toString().replaceAll("PT", ""));
-            }
-        };
-
-        new Thread(timer).start();*/
-
-
+        if(buffer.getSize() == 0 && buffer.getConsumedItems() == buffer.getProducedItems()) {
+            consumers.interrupt();
+        }*/
     }
 }

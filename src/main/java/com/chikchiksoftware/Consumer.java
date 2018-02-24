@@ -14,14 +14,15 @@ public class Consumer implements Runnable {
         this.buffer = buffer;
     }
 
+    @Override
     public void run() {
         boolean done = false;
-        do{
+        while(!done){
             try {
                 System.out.println(Thread.currentThread().getName() + " Consumed " + buffer.take());
             }catch(Exception e) {
                 done = true;
             }
-        }while(!done);
+        }
     }
 }

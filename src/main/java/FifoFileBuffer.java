@@ -1,6 +1,4 @@
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -10,59 +8,91 @@ import java.util.concurrent.BlockingQueue;
  * @authors Anton Nagornyi
  * on 17.02.2018.
  */
+
 public class FifoFileBuffer<T> {
     private final Object lock = new Object();
     private File dataFile;
-    private FileWriter fileWriter;
-    private long produceCount = 0L;
-    private long consumeCount = 0L;
+    private int size;
+    private long producedItems;
+    private long consumedItems;
+    private T currentItem;
+
+    FileOutputStream fileWriter;
+    ObjectOutputStream objectOutputStream;
+
+    FileInputStream fileReader;
+    ObjectInputStream objectInputStream;
+
+
     BlockingQueue<String> queue = new ArrayBlockingQueue<>(10);
 
     public FifoFileBuffer() {
+        this.dataFile = new File("data.tmp");
+
         try {
-            this.dataFile = File.createTempFile("data", "tmp");
-            this.fileWriter = new FileWriter(this.dataFile);
+            fileWriter = new FileOutputStream(this.dataFile);
+            objectOutputStream = new ObjectOutputStream(fileWriter);
+            fileReader = new FileInputStream(this.dataFile);
+            objectInputStream = new ObjectInputStream(fileReader);
         }catch(IOException e) {
-            e.printStackTrace();
+            System.err.println(e.getMessage());
         }
-
     }
-
-    private T data = null;
 
     public void put(T data) {
+
+        checkNotNull(data);
+
         synchronized(lock) {
-            while(this.data != null) {
-                try {
-                    lock.wait();
-                }catch(InterruptedException e) {
-                    e.printStackTrace();
-                }
+            try {
+                objectOutputStream.writeObject(data);
+                size++;
+                producedItems++;
+            }catch(IOException e) {
+                System.err.println(e.getMessage());
             }
-            this.data = data;
-            produceCount++;
-            System.out.println(Thread.currentThread().getName() + " Produced " + produceCount);
-            lock.notifyAll();
+
+            System.out.println(Thread.currentThread().getName() + " Produced " + data);
+            lock.notify();
         }
+
 
     }
 
-    public T poll() {
+    public T take() throws Exception {
         synchronized(lock) {
-            while(this.data == null) {
-                try {
-                    lock.wait();
-                }catch(InterruptedException e) {
-                    e.printStackTrace();
-                }
+            if(getSize() == 0) {
+                lock.wait();
             }
 
-            T result = this.data;
-            consumeCount++;
-            System.out.println(Thread.currentThread().getName() + " Consumed " + consumeCount);
-            data = null;
-            lock.notifyAll();
-            return result;
+            this.currentItem = (T) objectInputStream.readObject();
+            Thread.sleep(100);
+            checkNotNull(currentItem);
+            size--;
+            consumedItems++;
+            return currentItem;
         }
+    }
+
+    /**
+     * Throws NullPointerException if argument is null.
+     *
+     * @param v the element
+     */
+    private static void checkNotNull(Object v) {
+        if (v == null)
+            throw new NullPointerException();
+    }
+
+    public int getSize() {
+        return size;
+    }
+
+    public long getProducedItems() {
+        return producedItems;
+    }
+
+    public long getConsumedItems() {
+        return consumedItems;
     }
 }

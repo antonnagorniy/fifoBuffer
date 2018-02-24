@@ -10,16 +10,18 @@ import java.sql.Timestamp;
 public class Producer implements Runnable {
 
     private final FifoFileBuffer buffer;
+    private final int generateFrequencySeconds;
 
-    public Producer(FifoFileBuffer buffer) {
+    public Producer(FifoFileBuffer buffer, int generateFrequencySeconds) {
         this.buffer = buffer;
+        this.generateFrequencySeconds = generateFrequencySeconds;
     }
 
     public void run() {
         while(true) {
             try {
                 buffer.put(new Timestamp(System.currentTimeMillis()));
-                Thread.sleep(3000);
+                Thread.sleep(generateFrequencySeconds);
             }catch(InterruptedException e) {
                 e.printStackTrace();
             }

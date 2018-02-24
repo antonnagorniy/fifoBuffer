@@ -14,7 +14,11 @@ public class Consumer implements Runnable {
 
     public void run() {
         while(true) {
-            System.out.println(buffer.poll());
+            try {
+                System.out.println(Thread.currentThread().getName() + " Consumed " + buffer.take());
+            }catch(Exception e) {
+                System.err.println(e.getMessage());
+            }
         }
     }
 }

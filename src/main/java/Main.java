@@ -1,3 +1,5 @@
+import service.UserInteractions;
+
 import java.time.Duration;
 import java.time.Instant;
 
@@ -29,13 +31,23 @@ import java.time.Instant;
 
 public class Main {
     public static void main(String[] args) {
+        UserInteractions interactions = new UserInteractions();
+
+        interactions.askForProducersQuantity();
+        interactions.askForConsumersQuantity();
+        interactions.askForFrequency();
+        interactions.askForProducerTimeToWork();
 
         Instant start = Instant.now();
 
         FifoFileBuffer buffer = new FifoFileBuffer();
 
         for(int i = 0; i < 15; i++) {
-            new Thread(new Producer(buffer, 1000)).start();
+            new Thread(new Producer(
+                    buffer,
+                    interactions.getFrequency(),
+                    interactions.getProducerTimeToWork())
+            ).start();
         }
 
         for(int i = 0; i < 3; i++) {

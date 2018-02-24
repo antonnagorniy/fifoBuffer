@@ -1,6 +1,7 @@
 
 import java.sql.Timestamp;
 
+
 /**
  * Created by
  *
@@ -10,18 +11,24 @@ import java.sql.Timestamp;
 public class Producer implements Runnable {
 
     private final FifoFileBuffer buffer;
-    private final int generateFrequencySeconds;
+    private final long generateFrequencySeconds;
+    private final long timeToWork;
 
-    public Producer(FifoFileBuffer buffer, int generateFrequencySeconds) {
+    public Producer(FifoFileBuffer buffer, long generateFrequencySeconds, long timeToWork) {
         this.buffer = buffer;
         this.generateFrequencySeconds = generateFrequencySeconds;
+        this.timeToWork = timeToWork;
     }
 
     public void run() {
-        while(true) {
+        long start = System.currentTimeMillis();
+        long end = 0;
+
+        while((end - start) <= timeToWork) {
             try {
                 buffer.put(new Timestamp(System.currentTimeMillis()));
                 Thread.sleep(generateFrequencySeconds);
+                end = System.currentTimeMillis();
             }catch(InterruptedException e) {
                 e.printStackTrace();
             }

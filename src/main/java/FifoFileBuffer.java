@@ -61,7 +61,7 @@ public class FifoFileBuffer<T> {
             }
 
             this.currentItem = (T) objectInputStream.readObject();
-            Thread.sleep(100);
+            Thread.sleep(150);
             checkNotNull(currentItem);
             size--;
             consumedItems++;

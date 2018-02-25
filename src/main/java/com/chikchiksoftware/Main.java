@@ -50,8 +50,10 @@ public class Main {
         FifoFileBuffer buffer = new FifoFileBuffer();
 
         for(int i = 0; i < interactions.getProducersCount(); i++) {
-            new Thread(producers, new Producer(buffer,
-                    interactions.getFrequency(), interactions.getProducerTimeToWork())
+            new Thread(new Producer(
+                    buffer,
+                    interactions.getFrequency(),
+                    interactions.getProducerTimeToWork())
             ).start();
         }
 
@@ -60,17 +62,8 @@ public class Main {
         timer.start();
 
         for(int i = 0; i < interactions.getConsumersCount(); i++) {
-            new Thread(consumers, new Consumer(buffer)).start();
+            new Thread(new Consumer(buffer)).start();
         }
 
-        /*try {
-            Thread.sleep(interactions.getProducerTimeToWork());
-        }catch(InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        if(buffer.getSize() == 0 && buffer.getConsumedItems() == buffer.getProducedItems()) {
-            consumers.interrupt();
-        }*/
     }
 }

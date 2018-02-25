@@ -1,6 +1,12 @@
 package com.chikchiksoftware;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.stream.Stream;
 
 /**
  * Created by
@@ -11,28 +17,15 @@ import java.io.*;
 
 public class FifoFileBuffer<T> {
     private final Object lock = new Object();
-    private final File dataFile;
+    private final File dataFile = new File("/data.txt");
     private long producedItems;
     private long consumedItems;
     private int size;
+    private int index;
 
-    FileOutputStream fileWriter;
-    ObjectOutputStream objectOutputStream;
-
-    FileInputStream fileReader;
-    ObjectInputStream objectInputStream;
 
     public FifoFileBuffer() {
-        this.dataFile = new File("data.tmp");
-        dataFile.deleteOnExit();
-        try {
-            fileWriter = new FileOutputStream(this.dataFile);
-            objectOutputStream = new ObjectOutputStream(fileWriter);
-            fileReader = new FileInputStream(this.dataFile);
-            objectInputStream = new ObjectInputStream(fileReader);
-        }catch(IOException e) {
-            System.err.println(e.getMessage());
-        }
+        this.index = 0;
     }
 
     public void put(T data) {
@@ -40,8 +33,11 @@ public class FifoFileBuffer<T> {
         checkNotNull(data);
 
         synchronized(lock) {
-            try {
-                objectOutputStream.writeObject(data);
+            try(FileWriter fileWriter = new FileWriter(dataFile, true);
+                BufferedWriter bufferedWriter = new BufferedWriter(fileWriter)) {
+
+                bufferedWriter.write(data.toString());
+                bufferedWriter.newLine();
                 size++;
                 producedItems++;
             }catch(IOException e) {
@@ -54,17 +50,22 @@ public class FifoFileBuffer<T> {
 
     }
 
-    public T take() throws InterruptedException, ClassNotFoundException, IOException{
+    public String take() throws InterruptedException, IOException{
         synchronized(lock) {
             while(isEmpty()) {
                 lock.wait();
             }
 
-            T result = (T) objectInputStream.readObject();
+            String line;
+            try (Stream<String> lines = Files.lines(Paths.get("data.txt"))) {
+                line = lines.skip(index).findFirst().get();
+            }
+
+            checkNotNull(line);
             size--;
+            index++;
             consumedItems++;
-            lock.notifyAll();
-            return result;
+            return line;
         }
     }
 

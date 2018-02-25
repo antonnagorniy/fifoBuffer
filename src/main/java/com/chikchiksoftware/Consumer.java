@@ -22,6 +22,7 @@ public class Consumer implements Runnable {
                 System.out.println(Thread.currentThread().getName() + " Consumed " + buffer.take());
             }catch(Exception e) {
                 done = true;
+                boolean bool = buffer.deleteFile();
             }
         }
     }

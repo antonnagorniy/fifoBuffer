@@ -18,7 +18,7 @@ public class FifoFileBufferTest extends TestCase {
     private Timestamp timestamp;
     private String testString;
     private Integer integer;
-    private FifoFileBuffer bufferTimestamp;
+    private FifoFileBuffer<Timestamp> bufferTimestamp;
     private FifoFileBuffer<String> bufferString;
     private FifoFileBuffer<Integer> bufferInteger;
     private List<String> stringsList;
@@ -43,7 +43,7 @@ public class FifoFileBufferTest extends TestCase {
         bufferTimestamp.put(timestamp);
 
         try {
-            assertEquals(bufferTimestamp.take(), timestamp);
+            assertEquals("Wrong object.", timestamp, bufferTimestamp.take());
         }catch(Exception e) {
             System.err.println(e.getMessage());
         }
@@ -55,10 +55,11 @@ public class FifoFileBufferTest extends TestCase {
         bufferString.put(testString);
 
         try {
-            assertEquals(bufferString.take(), testString);
+            assertEquals("Wrong object.", testString, bufferString.take());
         }catch(Exception e) {
             System.err.println(e);
         }
+
     }
 
     @Test
@@ -66,7 +67,7 @@ public class FifoFileBufferTest extends TestCase {
         bufferInteger.put(integer);
 
         try {
-            assertEquals(bufferInteger.take(), integer);
+            assertEquals("Wrong object", integer, bufferInteger.take());
         }catch(Exception e) {
             System.err.println(e);
         }
@@ -154,6 +155,9 @@ public class FifoFileBufferTest extends TestCase {
 
     @After
     public void tearDown() {
+        boolean bool = bufferString.deleteFile();
+        boolean bool2 = bufferTimestamp.deleteFile();
+        boolean bool3 = bufferInteger.deleteFile();
         bufferTimestamp = null;
         bufferString = null;
         bufferInteger = null;

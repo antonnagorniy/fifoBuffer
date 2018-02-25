@@ -47,10 +47,10 @@ public class FifoFileBuffer<T> {
 
     public T take() throws InterruptedException, ClassNotFoundException, IOException{
         synchronized(lock) {
-            while(isEmpty()) {
-                lock.wait();
-            }
 
+            while(isEmpty()) {
+                lock.wait(500);
+            }
             T result;
 
             try(FileInputStream fileReader = new FileInputStream(this.dataFile);
@@ -58,6 +58,9 @@ public class FifoFileBuffer<T> {
                 result = (T) objectInputStream.readObject();
             }
 
+            if(consumedItems == producedItems) {
+                result = null;
+            }
             checkNotNull(result);
             size--;
             consumedItems++;
@@ -91,5 +94,8 @@ public class FifoFileBuffer<T> {
         return consumedItems;
     }
 
+    public boolean deleteFile() {
+        return dataFile.delete();
+    }
 
 }

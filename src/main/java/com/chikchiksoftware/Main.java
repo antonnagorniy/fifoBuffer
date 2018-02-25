@@ -1,5 +1,6 @@
 package com.chikchiksoftware;
 
+import com.chikchiksoftware.service.ThreadPool;
 import com.chikchiksoftware.service.Timer;
 import com.chikchiksoftware.service.UserInteractions;
 
@@ -59,18 +60,17 @@ public class Main {
         timer.setDaemon(true);
         timer.start();
 
-        for(int i = 0; i < interactions.getConsumersCount(); i++) {
+
+        /*for(int i = 0; i < interactions.getConsumersCount(); i++) {
             new Thread(consumers, new Consumer(buffer)).start();
-        }
-
-        /*try {
-            Thread.sleep(interactions.getProducerTimeToWork());
-        }catch(InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        if(buffer.getSize() == 0 && buffer.getConsumedItems() == buffer.getProducedItems()) {
-            consumers.interrupt();
         }*/
+
+        ThreadPool consumersPool = new ThreadPool(interactions.getConsumersCount());
+
+
+        consumersPool.execute(new Consumer(buffer));
+
+
+
     }
 }

@@ -16,23 +16,13 @@ public class FifoFileBuffer<T> {
     private long consumedItems;
     private int size;
 
-    FileOutputStream fileWriter;
-    ObjectOutputStream objectOutputStream;
+    ;
 
-    FileInputStream fileReader;
-    ObjectInputStream objectInputStream;
+    ;
 
     public FifoFileBuffer() {
         this.dataFile = new File("data.tmp");
         dataFile.deleteOnExit();
-        try {
-            fileWriter = new FileOutputStream(this.dataFile);
-            objectOutputStream = new ObjectOutputStream(fileWriter);
-            fileReader = new FileInputStream(this.dataFile);
-            objectInputStream = new ObjectInputStream(fileReader);
-        }catch(IOException e) {
-            System.err.println(e.getMessage());
-        }
     }
 
     public void put(T data) {
@@ -40,7 +30,8 @@ public class FifoFileBuffer<T> {
         checkNotNull(data);
 
         synchronized(lock) {
-            try {
+            try(FileOutputStream fileWriter = new FileOutputStream(this.dataFile);
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileWriter)) {
                 objectOutputStream.writeObject(data);
                 size++;
                 producedItems++;
@@ -60,10 +51,16 @@ public class FifoFileBuffer<T> {
                 lock.wait();
             }
 
-            T result = (T) objectInputStream.readObject();
+            T result;
+
+            try(FileInputStream fileReader = new FileInputStream(this.dataFile);
+                ObjectInputStream objectInputStream = new ObjectInputStream(fileReader)) {
+                result = (T) objectInputStream.readObject();
+            }
+
+            checkNotNull(result);
             size--;
             consumedItems++;
-            lock.notifyAll();
             return result;
         }
     }

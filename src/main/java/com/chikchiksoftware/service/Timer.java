@@ -31,9 +31,11 @@ public class Timer implements Runnable {
             }
 
             end = Instant.now();
+            System.out.println("==========================================");
             System.out.println("Produced: " + buffer.getProducedItems());
             System.out.println("Consumed: " + buffer.getConsumedItems());
             System.out.println("Working time: " + Duration.between(start, end).toString().replaceAll("PT", ""));
+            System.out.println("==========================================");
         }
     }
 }

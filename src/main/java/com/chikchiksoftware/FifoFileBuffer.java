@@ -76,7 +76,7 @@ public class FifoFileBuffer<T> {
      *
      * @param v the element
      */
-    private static void checkNotNull(Object v) {
+    private void checkNotNull(Object v) {
         if (v == null)
             throw new NullPointerException();
     }

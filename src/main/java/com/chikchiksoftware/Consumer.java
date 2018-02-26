@@ -1,6 +1,6 @@
 package com.chikchiksoftware;
 
-import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.NoSuchElementException;
 
 /**
@@ -11,22 +11,18 @@ import java.util.NoSuchElementException;
  */
 public class Consumer implements Runnable {
 
-    private final FifoFileBuffer buffer;
-    private final ThreadGroup producers;
+    private final FifoFileBuffer<Timestamp> buffer;
 
-    public Consumer(FifoFileBuffer buffer, ThreadGroup producers) {
+    public Consumer(FifoFileBuffer<Timestamp> buffer) {
         this.buffer = buffer;
-        this.producers = producers;
     }
 
     @Override
     public void run() {
-        while(producers.activeCount() >= 0 && buffer.getConsumedItems() != buffer.getProducedItems()){
-            try {
+        try {
+            while(!buffer.isEmpty()) {
                 System.out.println(Thread.currentThread().getName() + " Consumed " + buffer.take());
-            }catch(IOException | NullPointerException | NoSuchElementException | InterruptedException e) {
-                System.err.println(e.getMessage());
             }
-        }
+        }catch(NoSuchElementException | IllegalStateException ignore) {}
     }
 }

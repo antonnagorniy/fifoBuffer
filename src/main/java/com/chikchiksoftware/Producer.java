@@ -25,14 +25,14 @@ public class Producer implements Runnable {
         long start = System.currentTimeMillis();
         long end = 0;
 
-        while((end - start) <= timeToWork) {
-            try {
+        try {
+            while((end - start) <= timeToWork) {
                 buffer.put(new Timestamp(System.currentTimeMillis()));
                 Thread.sleep(generateFrequencySeconds);
                 end = System.currentTimeMillis();
-            }catch(InterruptedException e) {
-                e.printStackTrace();
             }
+        }catch(InterruptedException e) {
+            System.err.println(e.getMessage());
         }
     }
 }

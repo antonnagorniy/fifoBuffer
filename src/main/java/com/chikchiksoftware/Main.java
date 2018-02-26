@@ -49,6 +49,7 @@ public class Main {
         long start = System.currentTimeMillis();
 
         FifoFileBuffer<Timestamp> buffer = new FifoFileBuffer<>();
+        Timer serviceTimer = new Timer(buffer, start, interactions.getProducerTimeToWork());
 
         for(int i = 0; i < interactions.getProducersCount(); i++) {
             new Thread(producers, new Producer(
@@ -58,31 +59,32 @@ public class Main {
             ).start();
         }
 
-        Thread timer = new Thread(new Timer(buffer, start));
+
+        Thread timer = new Thread(serviceTimer);
         timer.setDaemon(true);
         timer.start();
 
         for(int i = 0; i < interactions.getConsumersCount(); i++) {
-            new Thread(consumers, new Consumer(buffer, producers)).start();
+            new Thread(consumers, new Consumer(buffer)).start();
         }
 
         Runnable runnable = () -> {
-            int consumersCount = 0;
 
-            while(consumers.activeCount() > 0) {
-                consumersCount = consumers.activeCount();
+            while(producers.activeCount() > 0 || consumers.activeCount() > 0) {
                 try {
                     Thread.sleep(1000);
                 }catch(InterruptedException e) {
                     e.printStackTrace();
                 }
+
             }
 
+            long end = System.currentTimeMillis();
             System.out.println("===================================");
             System.out.println("Totals:");
             System.out.println("Produced: " + buffer.getProducedItems());
             System.out.println("Consumed: " + buffer.getConsumedItems());
-            System.out.println("Consumers failed: " + (interactions.getConsumersCount() - consumersCount));
+            System.out.println("Time elapsed: " + serviceTimer.millisToDHMS(end - start));
             System.out.println("===================================");
             buffer.deleteFile();
         };

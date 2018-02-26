@@ -3,7 +3,7 @@ package com.chikchiksoftware;
 import com.chikchiksoftware.service.Timer;
 import com.chikchiksoftware.service.UserInteractions;
 
-import java.time.Instant;
+import java.sql.Timestamp;
 
 /**
  * Created by
@@ -32,12 +32,13 @@ import java.time.Instant;
 */
 
 public class Main {
-    private static Instant start;
+
     private static UserInteractions interactions = new UserInteractions();
     private static ThreadGroup producers = new ThreadGroup("Producers");
-    private static ThreadGroup consumers = new ThreadGroup("Consumers");
 
     public static void main(String[] args) {
+
+        ThreadGroup consumers = new ThreadGroup("Consumers");
 
         interactions.askForProducersQuantity();
         interactions.askForConsumersQuantity();
@@ -45,12 +46,12 @@ public class Main {
         interactions.askForProducerTimeToWork();
         interactions.close();
 
-        start = Instant.now();
+        long start = System.currentTimeMillis();
 
-        FifoFileBuffer buffer = new FifoFileBuffer();
+        FifoFileBuffer<Timestamp> buffer = new FifoFileBuffer<>();
 
         for(int i = 0; i < interactions.getProducersCount(); i++) {
-            new Thread(new Producer(
+            new Thread(producers, new Producer(
                     buffer,
                     interactions.getFrequency(),
                     interactions.getProducerTimeToWork())
@@ -62,8 +63,30 @@ public class Main {
         timer.start();
 
         for(int i = 0; i < interactions.getConsumersCount(); i++) {
-            new Thread(new Consumer(buffer)).start();
+            new Thread(consumers, new Consumer(buffer, producers)).start();
         }
 
+        Runnable runnable = () -> {
+            int consumersCount = 0;
+
+            while(consumers.activeCount() > 0) {
+                consumersCount = consumers.activeCount();
+                try {
+                    Thread.sleep(1000);
+                }catch(InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            System.out.println("===================================");
+            System.out.println("Totals:");
+            System.out.println("Produced: " + buffer.getProducedItems());
+            System.out.println("Consumed: " + buffer.getConsumedItems());
+            System.out.println("Consumers failed: " + (interactions.getConsumersCount() - consumersCount));
+            System.out.println("===================================");
+            buffer.deleteFile();
+        };
+
+        new Thread(runnable).start();
     }
 }

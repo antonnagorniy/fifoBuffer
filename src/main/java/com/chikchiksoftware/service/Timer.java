@@ -14,10 +14,12 @@ public class Timer implements Runnable {
     private final FifoFileBuffer buffer;
     private final long start;
     private long end;
+    private long workingTime;
 
-    public Timer(FifoFileBuffer buffer, long start) {
+    public Timer(FifoFileBuffer buffer, long start, long workingTime) {
         this.buffer = buffer;
         this.start = start;
+        this.workingTime = workingTime;
     }
 
     @Override
@@ -34,12 +36,12 @@ public class Timer implements Runnable {
             System.out.println("Produced: " + buffer.getProducedItems());
             System.out.println("Consumed: " + buffer.getConsumedItems());
             System.out.println("Working time: " + millisToDHMS(end - start));
-            System.out.println("Producers remaining time to work: " + millisToDHMS((start + 30000) - System.currentTimeMillis()));
+            System.out.println("Producers remaining time to work: " + millisToDHMS((start + workingTime) - System.currentTimeMillis()));
             System.out.println("==========================================");
         }
     }
 
-    private String millisToDHMS(long duration) {
+    public String millisToDHMS(long duration) {
         String result;
 
         if(duration < 0) {

@@ -6,6 +6,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.Timestamp;
 import java.util.stream.Stream;
 
 /**
@@ -16,16 +17,15 @@ import java.util.stream.Stream;
  */
 
 public class FifoFileBuffer<T> {
-    private final Object lock = new Object();
-    private final File dataFile = new File("/data.txt");
-    private long producedItems;
-    private long consumedItems;
-    private int size;
-    private int index;
+    private final Object lock;
+    private final File dataFile;
+    private long count;
+    private long index;
 
 
     public FifoFileBuffer() {
-        this.index = 0;
+        lock = new Object();
+        this.dataFile = new File(new Timestamp(System.currentTimeMillis()).getTime() + ".tmp");
     }
 
     public void put(T data) {
@@ -38,34 +38,36 @@ public class FifoFileBuffer<T> {
 
                 bufferedWriter.write(data.toString());
                 bufferedWriter.newLine();
-                size++;
-                producedItems++;
+                bufferedWriter.flush();
+                count++;
+
             }catch(IOException e) {
                 System.err.println(e.getMessage());
+            }finally {
+                lock.notifyAll();
             }
-
-            lock.notifyAll();
         }
 
 
     }
 
-    public String take() throws InterruptedException, IOException{
+    public String take() {
         synchronized(lock) {
-            while(isEmpty()) {
-                lock.wait();
+
+            String item = null;
+
+            try(Stream<String> lines = Files.lines(Paths.get(dataFile.getName()))) {
+                item = lines.skip(index).findFirst().get();
+            }catch(IOException e) {
+                System.err.println(e.getMessage());
             }
 
-            String line;
-            try (Stream<String> lines = Files.lines(Paths.get("data.txt"))) {
-                line = lines.skip(index).findFirst().get();
-            }
-
-            checkNotNull(line);
-            size--;
             index++;
-            consumedItems++;
-            return line;
+
+            lock.notifyAll();
+            return item;
+
+
         }
     }
 
@@ -80,20 +82,28 @@ public class FifoFileBuffer<T> {
     }
 
     public boolean isEmpty() {
-        return size == 0;
+        return (count == index);
     }
 
-    public int getSize() {
-        return size;
+    public long getSize() {
+        return (count - index);
     }
 
     public long getProducedItems() {
-        return producedItems;
+        return count;
     }
 
     public long getConsumedItems() {
-        return consumedItems;
+        return index;
     }
 
-
+    /**
+     * Delete buffer's data file
+     *
+     *
+     * @return boolean
+     */
+    public boolean deleteFile() {
+        return dataFile.delete();
+    }
 }

@@ -32,7 +32,7 @@ public class Producer implements Runnable {
                 end = System.currentTimeMillis();
             }
         }catch(InterruptedException e) {
-            System.err.println(e.getMessage());
+            System.err.println("Producer is down " + e.getMessage());
         }
     }
 }

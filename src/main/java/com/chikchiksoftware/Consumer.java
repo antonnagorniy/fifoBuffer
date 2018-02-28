@@ -1,7 +1,6 @@
 package com.chikchiksoftware;
 
 import java.sql.Timestamp;
-import java.util.NoSuchElementException;
 
 /**
  * Created by
@@ -23,6 +22,6 @@ public class Consumer implements Runnable {
             while(!buffer.isEmpty()) {
                 System.out.println(Thread.currentThread().getName() + " Consumed " + buffer.take());
             }
-        }catch(NoSuchElementException | IllegalStateException ignore) {}
+        }catch(Exception ignore) {}
     }
 }

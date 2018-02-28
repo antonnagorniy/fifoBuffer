@@ -154,9 +154,7 @@ public class FifoFileBufferTest extends TestCase {
 
     @After
     public void tearDown() {
-        timestampBuffer.deleteFile();
-        stringBuffer.deleteFile();
-        integerBuffer.deleteFile();
+
     }
 
 }

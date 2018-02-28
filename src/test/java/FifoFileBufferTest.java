@@ -157,13 +157,6 @@ public class FifoFileBufferTest extends TestCase {
         timestampBuffer.deleteFile();
         stringBuffer.deleteFile();
         integerBuffer.deleteFile();
-        timestampBuffer = null;
-        stringBuffer = null;
-        integerBuffer = null;
-        timestamp = null;
-        testString = null;
-        integer = null;
-        stringsList = null;
     }
 
 }

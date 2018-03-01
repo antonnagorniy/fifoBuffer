@@ -32,7 +32,7 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
         lock = new Object();
         this.dataFile = new File(fileName);
         dataFile.deleteOnExit();
-        this.dataFileMaxLength = /*104857600*/60000;
+        this.dataFileMaxLength = 104857600;
     }
 
     /**

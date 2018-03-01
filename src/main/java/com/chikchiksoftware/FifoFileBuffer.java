@@ -2,31 +2,32 @@ package com.chikchiksoftware;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
  * Created by
  *
- * @authors Anton Nagornyi
+ * @author Anton Nagornyi
  * on 17.02.2018.
  */
 
-public class FifoFileBuffer<T> {
+public class FifoFileBuffer<T> implements java.io.Serializable {
     private final Object lock;
     private final String fileName = new Timestamp(System.currentTimeMillis()).getTime() + ".tmp";
-    private File dataFile;
+    private final File dataFile;
     private long count;
     private long offset;
     private long consumed;
     private final long dataFileMaxLength;
 
-
+    /**
+     * Creates an {@code FifoFileBuffer} with default params
+     *
+     */
     public FifoFileBuffer() {
         lock = new Object();
         this.dataFile = new File(fileName);
@@ -40,14 +41,13 @@ public class FifoFileBuffer<T> {
      * @param data the element to put
      */
     public void put(T data) {
-
         synchronized(lock) {
             try {
                 while(getDataFileLength() > dataFileMaxLength) {
                     lock.wait();
                 }
             }catch(InterruptedException e) {
-                System.err.println("Waiting for file dump interrupted.");
+                System.err.println("Put failed: " + e.getMessage());
             }
 
             try(FileWriter fileWriter = new FileWriter(dataFile, true);
@@ -75,11 +75,11 @@ public class FifoFileBuffer<T> {
     public String take() {
         synchronized(lock) {
             try {
-                if(getDataFileLength() > dataFileMaxLength) {
+                while(getDataFileLength() > dataFileMaxLength) {
                     lock.wait();
                 }
             }catch(InterruptedException e) {
-                System.err.println("Waiting for file dump interrupted.");
+                System.err.println("Put failed: " + e.getMessage());
             }
 
             String item = null;
@@ -87,7 +87,7 @@ public class FifoFileBuffer<T> {
             try(Stream<String> lines = Files.lines(Paths.get(dataFile.getName()))) {
                 item = lines.skip(offset).findFirst().get();
             }catch(IOException e) {
-                System.err.println("File reading problem: " + e.getMessage());
+                System.err.println("Take failed: " + e.getMessage());
             }
 
             offset++;
@@ -107,7 +107,7 @@ public class FifoFileBuffer<T> {
     }
 
     /**
-     * Returns difference between count of added elements and current offset
+     * Get difference between count of added elements and current offset
      *
      * @return long
      */
@@ -116,7 +116,7 @@ public class FifoFileBuffer<T> {
     }
 
     /**
-     * Returns count of added elements
+     * Get count of added elements
      *
      * @return long
      */
@@ -125,7 +125,7 @@ public class FifoFileBuffer<T> {
     }
 
     /**
-     * Returns count of taken elements
+     * Get count of taken elements
      *
      * @return long
      */
@@ -134,7 +134,7 @@ public class FifoFileBuffer<T> {
     }
 
     /**
-     * Returns length of data file
+     * Get length of data file
      *
      * @return long
      */
@@ -143,7 +143,7 @@ public class FifoFileBuffer<T> {
     }
 
     /**
-     * Returns data file length limitation
+     * Get data file length limitation
      *
      * @return long
      */
@@ -154,13 +154,10 @@ public class FifoFileBuffer<T> {
     /**
      * Dump data file when it reaches length limitation
      *
-     * @throws IOException
+     * @throws IOException if file is unreachable
      */
     public void fileDump() throws IOException {
-
         synchronized(lock) {
-            Path temp = Files.createTempFile("temp", ".tmp");
-            temp.toFile().deleteOnExit();
             List<String> fileLines;
 
             try(Stream<String> lines = Files.lines(Paths.get(dataFile.getPath()))) {
@@ -180,37 +177,5 @@ public class FifoFileBuffer<T> {
             offset = 0;
             lock.notifyAll();
         }
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if(this == o) return true;
-        if(!(o instanceof FifoFileBuffer)) return false;
-        FifoFileBuffer<?> that = (FifoFileBuffer<?>) o;
-        return count == that.count &&
-                offset == that.offset &&
-                consumed == that.consumed &&
-                getDataFileMaxLength() == that.getDataFileMaxLength() &&
-                Objects.equals(lock, that.lock) &&
-                Objects.equals(fileName, that.fileName) &&
-                Objects.equals(dataFile, that.dataFile);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(lock, fileName, dataFile, count, offset, consumed, dataFileMaxLength);
-    }
-
-    @Override
-    public String toString() {
-        return "FifoFileBuffer{" +
-                "lock=" + lock +
-                ", fileName='" + fileName + '\'' +
-                ", dataFile=" + dataFile +
-                ", count=" + count +
-                ", offset=" + offset +
-                ", consumed=" + consumed +
-                ", dataFileMaxLength=" + dataFileMaxLength +
-                '}';
     }
 }

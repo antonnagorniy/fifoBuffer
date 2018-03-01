@@ -61,8 +61,6 @@ public class FifoFileBuffer<T> {
                 lock.notifyAll();
             }
         }
-
-
     }
 
     /**

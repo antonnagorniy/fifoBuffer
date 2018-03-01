@@ -5,6 +5,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -158,17 +160,20 @@ public class FifoFileBuffer<T> {
         synchronized(lock) {
             Path temp = Files.createTempFile("temp", ".tmp");
             temp.toFile().deleteOnExit();
+            List<String> fileLines;
 
-            try(PrintWriter out = new PrintWriter(new FileWriter(temp.toFile()));
-                Stream<String> lines = Files.lines(Paths.get(dataFile.getPath()))) {
-
-                lines.skip(offset).forEachOrdered(out::println);
+            try(Stream<String> lines = Files.lines(Paths.get(dataFile.getPath()))) {
+                fileLines = lines.skip(offset).collect(Collectors.toList());
             }
 
-            try(PrintWriter out = new PrintWriter(new FileWriter(dataFile));
-                Stream<String> lines = Files.lines(temp)) {
+            try(PrintWriter out = new PrintWriter(new FileWriter(dataFile))) {
+                out.write("");
+                out.flush();
+            }
 
-                lines.forEachOrdered(out::println);
+            try(PrintWriter out = new PrintWriter(new FileWriter(dataFile))) {
+                fileLines.forEach(out::println);
+                out.flush();
             }
 
             offset = 0;

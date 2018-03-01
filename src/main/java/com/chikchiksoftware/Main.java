@@ -16,11 +16,11 @@ import java.sql.Timestamp;
 
 public class Main {
 
-    private static UserInteractions interactions = new UserInteractions();
-    private static ThreadGroup producers = new ThreadGroup("Producers");
-    private static ThreadGroup consumers = new ThreadGroup("Consumers");
-
     public static void main(String[] args) {
+
+        final UserInteractions interactions = new UserInteractions();
+        final ThreadGroup producers = new ThreadGroup("Producers");
+        final ThreadGroup consumers = new ThreadGroup("Consumers");
 
         interactions.producersQuantityInput();
         interactions.consumersQuantityInput();
@@ -40,7 +40,6 @@ public class Main {
                     interactions.getProducerTimeToWork())
             ).start();
         }
-
 
         Thread timerDaemon = new Thread(serviceTimer);
         timerDaemon.setDaemon(true);

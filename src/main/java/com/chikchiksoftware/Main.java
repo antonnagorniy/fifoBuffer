@@ -49,6 +49,10 @@ public class Main {
             new Thread(consumers, new Consumer(buffer)).start();
         }
 
+        Thread fileCleaningDaemon = new Thread(new FileCleaningService(buffer));
+        fileCleaningDaemon.setDaemon(true);
+        fileCleaningDaemon.start();
+
         Runnable statistics = () -> {
             while(producers.activeCount() > 0 || consumers.activeCount() > 0) {
                 try {
@@ -67,10 +71,6 @@ public class Main {
             System.out.println("Data file length: " + (Math.round(buffer.getDataFileLength() / 1024)) + " Kb");
             System.out.println("===================================");
         };
-
-        Thread fileCleaningDaemon = new Thread(new FileCleaningService(buffer));
-        fileCleaningDaemon.setDaemon(true);
-        fileCleaningDaemon.start();
 
         Thread finalStatisticsService = new Thread(statistics);
         finalStatisticsService.start();

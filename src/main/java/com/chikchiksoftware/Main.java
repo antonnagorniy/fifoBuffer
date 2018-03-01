@@ -16,11 +16,11 @@ import java.sql.Timestamp;
 
 public class Main {
 
-    private static UserInteractions interactions = new UserInteractions();
-    private static ThreadGroup producers = new ThreadGroup("Producers");
-    private static ThreadGroup consumers = new ThreadGroup("Consumers");
-
     public static void main(String[] args) {
+
+        final UserInteractions interactions = new UserInteractions();
+        final ThreadGroup producers = new ThreadGroup("Producers");
+        final ThreadGroup consumers = new ThreadGroup("Consumers");
 
         interactions.producersQuantityInput();
         interactions.consumersQuantityInput();
@@ -41,7 +41,6 @@ public class Main {
             ).start();
         }
 
-
         Thread timerDaemon = new Thread(serviceTimer);
         timerDaemon.setDaemon(true);
         timerDaemon.start();
@@ -49,6 +48,10 @@ public class Main {
         for(int i = 0; i < interactions.getConsumersCount(); i++) {
             new Thread(consumers, new Consumer(buffer)).start();
         }
+
+        Thread fileCleaningDaemon = new Thread(new FileCleaningService(buffer));
+        fileCleaningDaemon.setDaemon(true);
+        fileCleaningDaemon.start();
 
         Runnable statistics = () -> {
             while(producers.activeCount() > 0 || consumers.activeCount() > 0) {
@@ -68,10 +71,6 @@ public class Main {
             System.out.println("Data file length: " + (Math.round(buffer.getDataFileLength() / 1024)) + " Kb");
             System.out.println("===================================");
         };
-
-        Thread fileCleaningDaemon = new Thread(new FileCleaningService(buffer));
-        fileCleaningDaemon.setDaemon(true);
-        fileCleaningDaemon.start();
 
         Thread finalStatisticsService = new Thread(statistics);
         finalStatisticsService.start();

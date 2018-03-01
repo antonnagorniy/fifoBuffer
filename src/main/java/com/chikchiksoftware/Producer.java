@@ -22,7 +22,7 @@ public class Producer implements Runnable {
     }
 
     public void run() {
-        long start = System.currentTimeMillis();
+        final long start = System.currentTimeMillis();
         long end = 0;
 
         try {

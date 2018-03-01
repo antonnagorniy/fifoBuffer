@@ -165,11 +165,6 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
             }
 
             try(PrintWriter out = new PrintWriter(new FileWriter(dataFile))) {
-                out.write("");
-                out.flush();
-            }
-
-            try(PrintWriter out = new PrintWriter(new FileWriter(dataFile))) {
                 fileLines.forEach(out::println);
                 out.flush();
             }

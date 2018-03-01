@@ -31,10 +31,14 @@ public class FifoFileBuffer<T> {
         this.dataFileMaxLength = 104857600;
     }
 
+    /**
+     * Inserts the specified element at the head of this buffer
+     *
+     * @param data the element to put
+     */
     public void put(T data) {
 
         synchronized(lock) {
-
             try {
                 while(getDataFileLength() > dataFileMaxLength) {
                     lock.wait();
@@ -61,9 +65,14 @@ public class FifoFileBuffer<T> {
 
     }
 
+    /**
+     * Takes element from the head of this buffer
+     *
+     * @return Data.toString
+     * @throws java.util.NoSuchElementException if element is null
+     */
     public String take() {
         synchronized(lock) {
-
             try {
                 if(getDataFileLength() > dataFileMaxLength) {
                     lock.wait();
@@ -75,7 +84,6 @@ public class FifoFileBuffer<T> {
             String item = null;
 
             try(Stream<String> lines = Files.lines(Paths.get(dataFile.getName()))) {
-
                 item = lines.skip(offset).findFirst().get();
             }catch(IOException e) {
                 System.err.println("File reading problem: " + e.getMessage());
@@ -88,34 +96,65 @@ public class FifoFileBuffer<T> {
         }
     }
 
+    /**
+     * Checks if there are no taken elements
+     *
+     * @return boolean
+     */
     public boolean isEmpty() {
         return (count == offset);
     }
 
+    /**
+     * Returns difference between count of added elements and current offset
+     *
+     * @return long
+     */
     public long getSize() {
         return (count - offset);
     }
 
+    /**
+     * Returns count of added elements
+     *
+     * @return long
+     */
     public long getProducedItems() {
         return count;
     }
 
+    /**
+     * Returns count of taken elements
+     *
+     * @return long
+     */
     public long getConsumedItems() {
         return consumed;
     }
 
+    /**
+     * Returns length of data file
+     *
+     * @return long
+     */
     public long getDataFileLength() {
         return dataFile.length();
     }
 
+    /**
+     * Returns data file length limitation
+     *
+     * @return long
+     */
     public long getDataFileMaxLength() {
         return dataFileMaxLength;
     }
 
-    public boolean deleteFile() {
-        return dataFile.delete();
-    }
-
+    /**
+     * Dump data file when it reaches length limitation
+     *
+     * @throws IOException
+     */
     public void fileDump() throws IOException {
 
         synchronized(lock) {

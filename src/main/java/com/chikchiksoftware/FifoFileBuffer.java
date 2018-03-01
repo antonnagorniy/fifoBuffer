@@ -32,7 +32,7 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
         lock = new Object();
         this.dataFile = new File(fileName);
         dataFile.deleteOnExit();
-        this.dataFileMaxLength = 104857600;
+        this.dataFileMaxLength = /*104857600*/60000;
     }
 
     /**
@@ -162,11 +162,6 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
 
             try(Stream<String> lines = Files.lines(Paths.get(dataFile.getPath()))) {
                 fileLines = lines.skip(offset).collect(Collectors.toList());
-            }
-
-            try(PrintWriter out = new PrintWriter(new FileWriter(dataFile))) {
-                out.write("");
-                out.flush();
             }
 
             try(PrintWriter out = new PrintWriter(new FileWriter(dataFile))) {

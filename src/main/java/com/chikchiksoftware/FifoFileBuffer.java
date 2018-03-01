@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -179,5 +180,37 @@ public class FifoFileBuffer<T> {
             offset = 0;
             lock.notifyAll();
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if(this == o) return true;
+        if(!(o instanceof FifoFileBuffer)) return false;
+        FifoFileBuffer<?> that = (FifoFileBuffer<?>) o;
+        return count == that.count &&
+                offset == that.offset &&
+                consumed == that.consumed &&
+                getDataFileMaxLength() == that.getDataFileMaxLength() &&
+                Objects.equals(lock, that.lock) &&
+                Objects.equals(fileName, that.fileName) &&
+                Objects.equals(dataFile, that.dataFile);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(lock, fileName, dataFile, count, offset, consumed, dataFileMaxLength);
+    }
+
+    @Override
+    public String toString() {
+        return "FifoFileBuffer{" +
+                "lock=" + lock +
+                ", fileName='" + fileName + '\'' +
+                ", dataFile=" + dataFile +
+                ", count=" + count +
+                ", offset=" + offset +
+                ", consumed=" + consumed +
+                ", dataFileMaxLength=" + dataFileMaxLength +
+                '}';
     }
 }

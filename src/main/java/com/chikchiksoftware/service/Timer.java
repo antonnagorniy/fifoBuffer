@@ -2,9 +2,6 @@ package com.chikchiksoftware.service;
 
 import com.chikchiksoftware.FifoFileBuffer;
 
-import java.time.Duration;
-import java.time.Instant;
-
 /**
  * Created by
  *
@@ -13,12 +10,14 @@ import java.time.Instant;
  */
 public class Timer implements Runnable {
     private final FifoFileBuffer buffer;
-    private final Instant start;
-    private Instant end = null;
+    private final long start;
+    private long end;
+    private long workingTime;
 
-    public Timer(FifoFileBuffer buffer, Instant start) {
+    public Timer(FifoFileBuffer buffer, long start, long workingTime) {
         this.buffer = buffer;
         this.start = start;
+        this.workingTime = workingTime;
     }
 
     @Override
@@ -30,12 +29,15 @@ public class Timer implements Runnable {
                 System.err.println(e.getMessage());
             }
 
-            end = Instant.now();
+            end = System.currentTimeMillis();
             System.out.println("==========================================");
             System.out.println("Produced: " + buffer.getProducedItems());
             System.out.println("Consumed: " + buffer.getConsumedItems());
-            System.out.println("Working time: " + Duration.between(start, end).toString().replaceAll("PT", ""));
+            System.out.println("Working time: " + TimeConversionService.millisToDHMS(end - start));
+            System.out.println("Producers remaining time to work: " + TimeConversionService.millisToDHMS((start + workingTime) - System.currentTimeMillis()));
             System.out.println("==========================================");
         }
     }
+
+
 }

@@ -8,7 +8,7 @@ import java.util.concurrent.Executor;
  * Created by
  *
  * @authors Anton Nagornyi
- * on 25.02.2018.
+ * on 26.02.2018.
  */
 public class ThreadPool implements Executor {
     private final Queue<Runnable> workQueue = new ConcurrentLinkedQueue<>();

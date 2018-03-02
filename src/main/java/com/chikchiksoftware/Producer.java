@@ -11,28 +11,28 @@ import java.sql.Timestamp;
  */
 public class Producer implements Runnable {
 
-    private final FifoFileBuffer buffer;
+    private final FifoFileBuffer<Timestamp> buffer;
     private final long generateFrequencySeconds;
     private final long timeToWork;
 
-    public Producer(FifoFileBuffer buffer, long generateFrequencySeconds, long timeToWork) {
+    public Producer(FifoFileBuffer<Timestamp> buffer, long generateFrequencySeconds, long timeToWork) {
         this.buffer = buffer;
         this.generateFrequencySeconds = generateFrequencySeconds;
         this.timeToWork = timeToWork;
     }
 
     public void run() {
-        long start = System.currentTimeMillis();
+        final long start = System.currentTimeMillis();
         long end = 0;
 
-        while((end - start) < timeToWork) {
-            try {
+        try {
+            while((end - start) <= timeToWork) {
                 buffer.put(new Timestamp(System.currentTimeMillis()));
                 Thread.sleep(generateFrequencySeconds);
                 end = System.currentTimeMillis();
-            }catch(InterruptedException e) {
-                e.printStackTrace();
             }
+        }catch(InterruptedException e) {
+            System.err.println("Producer is down " + e.getMessage());
         }
     }
 }

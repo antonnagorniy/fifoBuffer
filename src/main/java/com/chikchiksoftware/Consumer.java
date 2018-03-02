@@ -1,5 +1,7 @@
 package com.chikchiksoftware;
 
+import java.sql.Timestamp;
+
 /**
  * Created by
  *
@@ -8,22 +10,18 @@ package com.chikchiksoftware;
  */
 public class Consumer implements Runnable {
 
-    private final FifoFileBuffer buffer;
+    private final FifoFileBuffer<Timestamp> buffer;
 
-    public Consumer(FifoFileBuffer buffer) {
+    public Consumer(FifoFileBuffer<Timestamp> buffer) {
         this.buffer = buffer;
     }
 
     @Override
     public void run() {
-        boolean done = false;
-        while(!done){
-            try {
+        try {
+            while(!buffer.isEmpty()) {
                 System.out.println(Thread.currentThread().getName() + " Consumed " + buffer.take());
-            }catch(Exception e) {
-                done = true;
-                boolean bool = buffer.deleteFile();
             }
-        }
+        }catch(Exception ignore) {}
     }
 }

@@ -16,25 +16,25 @@ public class UserInteractions {
     private int producersCount;
     private int consumersCount;
 
-    public void askForProducersQuantity() {
+    public void producersQuantityInput() {
         System.out.println("Input Producers quantity: ");
 
         this.producersCount = scanForNumbers().intValue();
     }
 
-    public void askForConsumersQuantity() {
+    public void consumersQuantityInput() {
         System.out.println("Input Consumers quantity: ");
 
         this.consumersCount = scanForNumbers().intValue();
     }
 
-    public void askForFrequency() {
+    public void dataGenerationFrequencyInput() {
         System.out.println("Input data generation frequency(milliseconds): ");
 
         this.frequency = scanForNumbers().longValue();
     }
 
-    public void askForProducerTimeToWork() {
+    public void producerTimeToWorkInput() {
         System.out.println("Input Producers time to work(seconds): ");
 
         this.producerTimeToWork = scanForNumbers().longValue() * 1000;

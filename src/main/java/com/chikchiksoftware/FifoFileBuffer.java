@@ -36,7 +36,7 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
     }
 
     /**
-     * Inserts the specified element at the head of this buffer
+     * Inserts the specified element at the {@code offset} line of this buffer
      *
      * @param data the element to put
      */

@@ -16,10 +16,11 @@ import java.sql.Timestamp;
 
 public class Main {
 
+    final static ThreadGroup producers = new ThreadGroup("Producers");
+
     public static void main(String[] args) {
 
         final UserInteractions interactions = new UserInteractions();
-        final ThreadGroup producers = new ThreadGroup("Producers");
         final ThreadGroup consumers = new ThreadGroup("Consumers");
 
         interactions.producersQuantityInput();
@@ -41,6 +42,8 @@ public class Main {
             ).start();
         }
 
+        producers.setDaemon(true);
+
         Thread timerDaemon = new Thread(serviceTimer);
         timerDaemon.setDaemon(true);
         timerDaemon.start();
@@ -48,6 +51,8 @@ public class Main {
         for(int i = 0; i < interactions.getConsumersCount(); i++) {
             new Thread(consumers, new Consumer(buffer)).start();
         }
+
+        consumers.setDaemon(true);
 
         Thread fileCleaningDaemon = new Thread(new FileCleaningService(buffer));
         fileCleaningDaemon.setDaemon(true);

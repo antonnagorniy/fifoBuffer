@@ -3,7 +3,6 @@ package com.chikchiksoftware;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.sql.Timestamp;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -16,23 +15,29 @@ import java.util.stream.Stream;
  */
 
 public class FifoFileBuffer<T> implements java.io.Serializable {
-    private final Object lock;
-    private final String fileName = new Timestamp(System.currentTimeMillis()).getTime() + ".tmp";
-    private final File dataFile;
+    private final Object lock = new Object();
+    //private final static String fileName = new Timestamp(System.currentTimeMillis()).getTime() + ".tmp";
+    private File dataFile;
     private long count;
     private long offset;
     private long consumed;
-    private final long dataFileMaxLength;
+    private final long dataFileMaxLength = 104857600;
+    T result = null;
+
+
 
     /**
      * Creates an {@code FifoFileBuffer} with default params
      *
      */
     public FifoFileBuffer() {
-        lock = new Object();
-        this.dataFile = new File(fileName);
+
+        try {
+            dataFile = File.createTempFile("temp", ".tmp");
+        }catch(IOException e) {
+            e.printStackTrace();
+        }
         dataFile.deleteOnExit();
-        this.dataFileMaxLength = 104857600;
     }
 
     /**
@@ -42,26 +47,13 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      */
     public void put(T data) {
         synchronized(lock) {
-            try {
-                while(getDataFileLength() > dataFileMaxLength) {
-                    lock.wait();
-                }
-            }catch(InterruptedException e) {
-                System.err.println("Put failed: " + e.getMessage());
-            }
-
-            try(FileWriter fileWriter = new FileWriter(dataFile, true);
-                BufferedWriter bufferedWriter = new BufferedWriter(fileWriter)) {
-
-                bufferedWriter.write(data.toString());
-                bufferedWriter.newLine();
-                bufferedWriter.flush();
+            try(FileOutputStream fileWriter = new FileOutputStream(dataFile, true);
+               ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileWriter)) {
+                objectOutputStream.writeObject(data);
+                objectOutputStream.flush();
                 count++;
-
             }catch(IOException e) {
-                System.err.println("Put failed: " + e.getMessage());
-            }finally {
-                lock.notifyAll();
+                System.err.println(e.getMessage());
             }
         }
     }
@@ -72,28 +64,28 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      * @return Data.toString
      * @throws java.util.NoSuchElementException if element is null
      */
-    public String take() {
+    public T take() {
         synchronized(lock) {
             try {
-                while(getDataFileLength() > dataFileMaxLength) {
+                while(isEmpty()) {
                     lock.wait();
                 }
             }catch(InterruptedException e) {
-                System.err.println("Put failed: " + e.getMessage());
+                e.printStackTrace();
             }
 
-            String item = null;
-
-            try(Stream<String> lines = Files.lines(Paths.get(dataFile.getName()))) {
-                item = lines.skip(offset).findFirst().get();
+            try(FileInputStream fileReader = new FileInputStream(dataFile);
+            ObjectInputStream objectInputStream = new ObjectInputStream(fileReader)){
+                result = (T) objectInputStream.readObject();
+                consumed++;
+                offset++;
             }catch(IOException e) {
-                System.err.println("Take failed: " + e.getMessage());
+                System.err.println("Error reading file " + e.getMessage());
+            }catch(ClassNotFoundException e) {
+                System.err.println("Error creating object " + e.getMessage());
             }
 
-            offset++;
-            consumed++;
-            lock.notifyAll();
-            return item;
+            return result;
         }
     }
 

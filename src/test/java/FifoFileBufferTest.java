@@ -42,34 +42,39 @@ public class FifoFileBufferTest extends TestCase {
     public void testPutTimestamp() {
         timestampBuffer.put(timestamp);
 
-        try {
-            assertEquals("Wrong object.", timestamp, timestampBuffer.take());
-        }catch(Exception e) {
-            System.err.println(e.getMessage());
-        }
+        assertEquals(
+                    "Wrong object.",
+                    timestamp,
+                    timestampBuffer.take());
 
+
+        timestampBuffer.finish();
     }
 
     @Test
     public void testPutString() {
         stringBuffer.put(testString);
 
-        try {
-            assertEquals("Wrong object.", testString, stringBuffer.take());
-        }catch(Exception e) {
-            System.err.println(e);
-        }
+        assertEquals(
+                    "Wrong object.",
+                    testString,
+                    stringBuffer.take());
+
+
+        stringBuffer.finish();
     }
 
     @Test
     public void testPutInteger() {
         integerBuffer.put(integer);
 
-        try {
-            assertEquals("Wrong object.", integer, Integer.valueOf(integerBuffer.take()));
-        }catch(Exception e) {
-            System.err.println(e);
-        }
+        assertEquals(
+                    "Wrong object.",
+                    integer,
+                    Integer.valueOf(integerBuffer.take()));
+
+
+        integerBuffer.finish();
     }
 
     @Test
@@ -79,16 +84,15 @@ public class FifoFileBufferTest extends TestCase {
            stringBuffer.put(stringsList.get(i));
        }
 
-       try {
-           for(int i = 0; i < stringsList.size(); i++) {
+       for(int i = 0; i < stringsList.size(); i++) {
                assertEquals(
                        stringsList.get(i) + " is in incorrect order.",
                        stringsList.get(i),
                        stringBuffer.take());
            }
-       }catch(Exception e) {
-           System.err.println(e.getMessage());
-       }
+
+
+       stringBuffer.finish();
     }
 
     @Test
@@ -104,18 +108,17 @@ public class FifoFileBufferTest extends TestCase {
 
         int itemsToTakeCount = 6;
 
-        try {
-            for(int i = 0; i < itemsToTakeCount; i++) {
+        for(int i = 0; i < itemsToTakeCount; i++) {
                 stringBuffer.take();
             }
-        }catch(Exception e) {
-            e.printStackTrace();
-        }
+
 
         assertEquals(
                 "Buffer size after " + itemsToTakeCount + " takes is incorrect.",
                 (stringsList.size() - itemsToTakeCount),
                 stringBuffer.getSize());
+
+        stringBuffer.finish();
     }
 
     @Test
@@ -128,6 +131,8 @@ public class FifoFileBufferTest extends TestCase {
                 "Produced count is incorrect",
                 stringsList.size(),
                 stringBuffer.getProducedItems());
+
+        stringBuffer.finish();
     }
 
     @Test
@@ -138,18 +143,16 @@ public class FifoFileBufferTest extends TestCase {
 
         long producedCount = stringBuffer.getProducedItems();
 
-        try {
-            for(String str : stringsList) {
+        for(int i = 0; i < stringsList.size(); i++) {
                 stringBuffer.take();
             }
-        }catch(Exception e) {
-            System.err.println(e.getMessage());
-        }
 
-        assertEquals(
+            assertEquals(
                 "Consumed count is incorrect.",
                 producedCount,
                 stringBuffer.getConsumedItems());
+
+        stringBuffer.finish();
     }
 
     @After

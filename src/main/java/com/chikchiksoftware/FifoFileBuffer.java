@@ -25,7 +25,9 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
     private long consumed;
     private final long dataFileMaxLength = 104857600;
     private long currentDataFileLength;
+    private T currentFirstElement;
 
+    private ObjectInputStream objectInputStream = null;
 
     /**
      * Creates an {@code FifoFileBuffer} with default params
@@ -82,20 +84,21 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
                 System.err.println("Error " + e.getMessage());
             }
 
-
-            T result = null;
-            ObjectInputStream objectInputStream = null;
             try {
-                objectInputStream = new ObjectInputStream(new FileInputStream(dataFile));
-                while(true) {
-                    result = (T) objectInputStream.readObject();
+                if(objectInputStream == null) {
+                    objectInputStream = new ObjectInputStream(new FileInputStream(dataFile));
                 }
+
+                while(true) {
+                    currentFirstElement = (T) objectInputStream.readObject();
+                }
+
             }catch(EOFException e) {
                 offset++;
                 consumed++;
-                return result;
-            }catch(IOException ignore) {
-                System.err.println("Error reading file " + ignore.getCause());
+                return currentFirstElement;
+            }catch(IOException e) {
+                System.err.println("Error reading file " + e.getCause());
             }catch(ClassNotFoundException e) {
                 System.err.println("Object deserialization failed: " + e.getCause());
             }finally {
@@ -109,7 +112,7 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
                 lock.notifyAll();
             }
 
-            return result;
+            return currentFirstElement;
         }
     }
 

@@ -131,3 +131,5 @@ $RECYCLE.BIN/
 
 # End of https://www.gitignore.io/api/git,java,linux,windows,intellij+iml
 /data.tmp
+src/main/resources/
+target/

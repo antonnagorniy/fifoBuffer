@@ -19,7 +19,7 @@ public class Consumer implements Runnable {
     @Override
     public void run() {
         try {
-            while(true/*Main.producers.activeCount() != 0 || !buffer.isEmpty()*/) {
+            while(true) {
                 System.out.println(Thread.currentThread().getName() + " Consumed " + buffer.take());
             }
         }catch(Exception ignore) {}

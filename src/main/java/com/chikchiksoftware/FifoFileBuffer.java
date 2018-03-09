@@ -1,13 +1,10 @@
 package com.chikchiksoftware;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Created by
@@ -19,14 +16,15 @@ import java.util.stream.Stream;
 public class FifoFileBuffer<T> implements java.io.Serializable {
     private final Object lock = new Object();
     private final String fileName = new Timestamp(System.currentTimeMillis()).getTime() + ".tmp";
-    private final File dataFile = new File(fileName);
+    private File dataFile = new File(fileName);
     private long count;
-    private long offset;
+    private long offset = 0;
     private long consumed;
     private final long dataFileMaxLength = 104857600;
     private long currentDataFileLength;
-    private T currentFirstElement;
 
+
+    private ObjectOutputStream objectOutputStream = null;
     private ObjectInputStream objectInputStream = null;
 
     /**
@@ -44,9 +42,11 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      */
     public void put(T data) {
         synchronized(lock) {
-            ObjectOutputStream objectOutputStream = null;
+
             try {
-                objectOutputStream = new ObjectOutputStream(new FileOutputStream(dataFile, true));
+                if(objectOutputStream == null) {
+                    objectOutputStream = new ObjectOutputStream(new FileOutputStream(dataFile, true));
+                }
                 objectOutputStream.writeObject(data);
                 objectOutputStream.flush();
                 count++;
@@ -55,13 +55,6 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
             }catch(NoSuchElementException e) {
                 System.err.println("Invalid input: " + e.getCause());
             }finally {
-                try {
-                    if(objectOutputStream != null) {
-                        objectOutputStream.close();
-                    }
-                }catch(IOException e) {
-                    System.err.println("Error closing write stream " + e.getCause());
-                }
                 lock.notifyAll();
             }
 
@@ -84,34 +77,27 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
                 System.err.println("Error " + e.getMessage());
             }
 
+            T currentFirstElement = null;
+
             try {
                 if(objectInputStream == null) {
                     objectInputStream = new ObjectInputStream(new FileInputStream(dataFile));
                 }
 
-                while(true) {
-                    currentFirstElement = (T) objectInputStream.readObject();
-                }
-
+                currentFirstElement = (T) objectInputStream.readUnshared();
             }catch(EOFException e) {
-                offset++;
-                consumed++;
-                return currentFirstElement;
+                System.err.println("EOF " + e.getCause());
             }catch(IOException e) {
-                System.err.println("Error reading file " + e.getCause());
+                System.err.println("Error reading file: ");
+                e.printStackTrace();
             }catch(ClassNotFoundException e) {
                 System.err.println("Object deserialization failed: " + e.getCause());
-            }finally {
-                try {
-                    if(objectInputStream != null) {
-                        objectInputStream.close();
-                    }
-                }catch(IOException e) {
-                    System.err.println("Error closing input stream " + e.getCause());
-                }
-                lock.notifyAll();
             }
 
+            System.out.println("Norm return");
+            offset++;
+            consumed++;
+            lock.notifyAll();
             return currentFirstElement;
         }
     }
@@ -123,6 +109,19 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      */
     public boolean isEmpty() {
         return (count == offset);
+    }
+
+    public void finish() {
+        try {
+            if(objectOutputStream != null) {
+                objectOutputStream.close();
+            }
+            if(objectInputStream != null) {
+                objectInputStream.close();
+            }
+        }catch(IOException e) {
+            System.err.println("Error closing streams " + e.getCause());
+        }
     }
 
     /**
@@ -177,18 +176,23 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      */
     public void fileDump() throws IOException {
         synchronized(lock) {
-            List<String> fileLines;
+            List<T> objects = new ArrayList<>();
 
-            try(Stream<String> lines = Files.lines(Paths.get(dataFile.getPath()))) {
-                fileLines = lines.skip(offset).collect(Collectors.toList());
+            try {
+                while(true) {
+                    objects.add((T)objectInputStream.readUnshared());
+                }
+            }catch(EOFException e) {
+                objectOutputStream = null;
+                objectInputStream = null;
+                dataFile.delete();
+
+                dataFile = new File(fileName);
+            }catch(ClassNotFoundException e) {
+                e.printStackTrace();
             }
 
-            try(PrintWriter out = new PrintWriter(new FileWriter(dataFile))) {
-                fileLines.forEach(out::println);
-                out.flush();
-            }
 
-            offset = 0;
             lock.notifyAll();
         }
     }

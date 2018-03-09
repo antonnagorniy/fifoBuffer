@@ -43,7 +43,7 @@ public class FifoFileBufferTest extends TestCase {
         timestampBuffer.put(timestamp);
 
         try {
-            assertEquals("Wrong object.", timestamp.toString(), timestampBuffer.take());
+            assertEquals("Wrong object.", timestamp, timestampBuffer.take());
         }catch(Exception e) {
             System.err.println(e.getMessage());
         }
@@ -75,15 +75,15 @@ public class FifoFileBufferTest extends TestCase {
     @Test
     public void testFifo() {
 
-       for(String str : stringsList) {
-           stringBuffer.put(str);
+       for(int i = 0; i < stringsList.size(); i++) {
+           stringBuffer.put(stringsList.get(i));
        }
 
        try {
-           for(String str : stringsList) {
+           for(int i = 0; i < stringsList.size(); i++) {
                assertEquals(
-                       str + " is in incorrect order.",
-                       str,
+                       stringsList.get(i) + " is in incorrect order.",
+                       stringsList.get(i),
                        stringBuffer.take());
            }
        }catch(Exception e) {

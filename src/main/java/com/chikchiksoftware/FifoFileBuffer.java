@@ -3,7 +3,9 @@ package com.chikchiksoftware;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.Timestamp;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -16,14 +18,13 @@ import java.util.stream.Stream;
 
 public class FifoFileBuffer<T> implements java.io.Serializable {
     private final Object lock = new Object();
-    //private final static String fileName = new Timestamp(System.currentTimeMillis()).getTime() + ".tmp";
-    private File dataFile;
+    private final String fileName = new Timestamp(System.currentTimeMillis()).getTime() + ".tmp";
+    private final File dataFile = new File(fileName);
     private long count;
     private long offset;
     private long consumed;
     private final long dataFileMaxLength = 104857600;
-    T result = null;
-
+    private long currentDataFileLength;
 
 
     /**
@@ -31,12 +32,6 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      *
      */
     public FifoFileBuffer() {
-
-        try {
-            dataFile = File.createTempFile("temp", ".tmp");
-        }catch(IOException e) {
-            e.printStackTrace();
-        }
         dataFile.deleteOnExit();
     }
 
@@ -47,14 +42,27 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      */
     public void put(T data) {
         synchronized(lock) {
-            try(FileOutputStream fileWriter = new FileOutputStream(dataFile, true);
-               ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileWriter)) {
+            ObjectOutputStream objectOutputStream = null;
+            try {
+                objectOutputStream = new ObjectOutputStream(new FileOutputStream(dataFile, true));
                 objectOutputStream.writeObject(data);
                 objectOutputStream.flush();
                 count++;
             }catch(IOException e) {
                 System.err.println(e.getMessage());
+            }catch(NoSuchElementException e) {
+                System.err.println("Invalid input: " + e.getCause());
+            }finally {
+                try {
+                    if(objectOutputStream != null) {
+                        objectOutputStream.close();
+                    }
+                }catch(IOException e) {
+                    e.printStackTrace();
+                }
+                lock.notifyAll();
             }
+
         }
     }
 
@@ -74,15 +82,31 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
                 e.printStackTrace();
             }
 
-            try(FileInputStream fileReader = new FileInputStream(dataFile);
-            ObjectInputStream objectInputStream = new ObjectInputStream(fileReader)){
-                result = (T) objectInputStream.readObject();
-                consumed++;
+
+            T result = null;
+            ObjectInputStream objectInputStream = null;
+            try {
+                objectInputStream = new ObjectInputStream(new FileInputStream(dataFile));
+                while(true) {
+                    result = (T) objectInputStream.readObject();
+                }
+            }catch(EOFException e) {
                 offset++;
-            }catch(IOException e) {
-                System.err.println("Error reading file " + e.getMessage());
+                consumed++;
+                lock.notifyAll();
+                return result;
+            }catch(IOException ignore) {
+                System.err.println(ignore.getCause());
             }catch(ClassNotFoundException e) {
-                System.err.println("Error creating object " + e.getMessage());
+                System.err.println("Object deserialization failed: " + e.getCause());
+            }finally {
+                try {
+                    if(objectInputStream != null) {
+                        objectInputStream.close();
+                    }
+                }catch(IOException e) {
+                    e.printStackTrace();
+                }
             }
 
             return result;

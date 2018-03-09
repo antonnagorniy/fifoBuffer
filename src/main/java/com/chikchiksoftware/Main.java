@@ -34,6 +34,8 @@ public class Main {
         FifoFileBuffer<Timestamp> buffer = new FifoFileBuffer<>();
         Timer serviceTimer = new Timer(buffer, start, interactions.getProducerTimeToWork());
 
+        producers.setDaemon(true);
+
         for(int i = 0; i < interactions.getProducersCount(); i++) {
             new Thread(producers, new Producer(
                     buffer,
@@ -42,17 +44,15 @@ public class Main {
             ).start();
         }
 
-        producers.setDaemon(true);
-
         Thread timerDaemon = new Thread(serviceTimer);
         timerDaemon.setDaemon(true);
         timerDaemon.start();
 
+        consumers.setDaemon(true);
         for(int i = 0; i < interactions.getConsumersCount(); i++) {
             new Thread(consumers, new Consumer(buffer)).start();
         }
 
-        consumers.setDaemon(true);
 
         Thread fileCleaningDaemon = new Thread(new FileCleaningService(buffer));
         fileCleaningDaemon.setDaemon(true);

@@ -49,7 +49,7 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
                 objectOutputStream.flush();
                 count++;
             }catch(IOException e) {
-                System.err.println(e.getMessage());
+                System.err.println("Error writing to file " + e.getCause());
             }catch(NoSuchElementException e) {
                 System.err.println("Invalid input: " + e.getCause());
             }finally {
@@ -58,7 +58,7 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
                         objectOutputStream.close();
                     }
                 }catch(IOException e) {
-                    e.printStackTrace();
+                    System.err.println("Error closing write stream " + e.getCause());
                 }
                 lock.notifyAll();
             }
@@ -79,7 +79,7 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
                     lock.wait();
                 }
             }catch(InterruptedException e) {
-                e.printStackTrace();
+                System.err.println("Error " + e.getMessage());
             }
 
 
@@ -93,10 +93,9 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
             }catch(EOFException e) {
                 offset++;
                 consumed++;
-                lock.notifyAll();
                 return result;
             }catch(IOException ignore) {
-                System.err.println(ignore.getCause());
+                System.err.println("Error reading file " + ignore.getCause());
             }catch(ClassNotFoundException e) {
                 System.err.println("Object deserialization failed: " + e.getCause());
             }finally {
@@ -105,8 +104,9 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
                         objectInputStream.close();
                     }
                 }catch(IOException e) {
-                    e.printStackTrace();
+                    System.err.println("Error closing input stream " + e.getCause());
                 }
+                lock.notifyAll();
             }
 
             return result;

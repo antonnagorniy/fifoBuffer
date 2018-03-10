@@ -131,6 +131,8 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
             }
         }catch(IOException e) {
             System.err.println("Error closing streams " + e.getCause());
+        }finally {
+            dataFile.delete();
         }
     }
 
@@ -194,7 +196,6 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
                 }
             }catch(EOFException e) {
                 finish();
-                dataFile.delete();
 
                 dataFile = new File(new Timestamp(System.currentTimeMillis()).getTime() + ".tmp");
                 dataFile.deleteOnExit();

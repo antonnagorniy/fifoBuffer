@@ -88,7 +88,7 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
                     objectInputStream = new ObjectInputStream(new FileInputStream(dataFile));
                 }
 
-                currentFirstElement = (T) objectInputStream.readUnshared();
+                currentFirstElement = (T) objectInputStream.readObject();
 
             }catch(EOFException ignore) {
                 ignore.printStackTrace();

@@ -1,5 +1,6 @@
 package com.chikchiksoftware;
 
+import java.io.IOException;
 import java.sql.Timestamp;
 
 /**
@@ -18,8 +19,14 @@ public class Consumer implements Runnable {
 
     @Override
     public void run() {
-        while(true) {
-            System.out.println(Thread.currentThread().getName() + " Consumed " + buffer.take());
+        boolean running = true;
+
+        try {
+            while(running) {
+                System.out.println(Thread.currentThread().getName() + " Consumed " + buffer.take());
+            }
+        }catch(IOException e){
+            running = false;
         }
 
 

@@ -18,10 +18,10 @@ public class Consumer implements Runnable {
 
     @Override
     public void run() {
-        try {
-            while(true) {
-                System.out.println(Thread.currentThread().getName() + " Consumed " + buffer.take());
-            }
-        }catch(Exception ignore) {}
+        while(true) {
+            System.out.println(Thread.currentThread().getName() + " Consumed " + buffer.take());
+        }
+
+
     }
 }

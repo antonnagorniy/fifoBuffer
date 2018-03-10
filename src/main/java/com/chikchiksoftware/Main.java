@@ -58,7 +58,7 @@ public class Main {
         fileCleaningDaemon.start();
 
         Runnable finalStatistics = () -> {
-            while(producers.activeCount() > 0 || !buffer.isEmpty()) {
+            while(producers.activeCount() > 0 /*|| !buffer.isEmpty()*/) {
                 try {
                     Thread.sleep(500);
                 }catch(InterruptedException e) {

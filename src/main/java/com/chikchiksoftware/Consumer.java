@@ -19,14 +19,12 @@ public class Consumer implements Runnable {
 
     @Override
     public void run() {
-        boolean running = true;
-
         try {
-            while(running) {
+            while(true) {
                 System.out.println(Thread.currentThread().getName() + " Consumed " + buffer.take());
             }
         }catch(IOException e){
-            running = false;
+            System.err.println("Consumer down");
         }
 
 

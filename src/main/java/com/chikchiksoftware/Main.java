@@ -16,11 +16,10 @@ import java.sql.Timestamp;
 
 public class Main {
 
-    final static ThreadGroup producers = new ThreadGroup("Producers");
-
     public static void main(String[] args) {
 
         final UserInteractions interactions = new UserInteractions();
+        final ThreadGroup producers = new ThreadGroup("Producers");
         final ThreadGroup consumers = new ThreadGroup("Consumers");
 
         interactions.producersQuantityInput();
@@ -54,12 +53,11 @@ public class Main {
             thread.start();
         }
 
-
         Thread fileCleaningDaemon = new Thread(new FileCleaningService(buffer));
         fileCleaningDaemon.setDaemon(true);
         fileCleaningDaemon.start();
 
-        Runnable statistics = () -> {
+        Runnable finalStatistics = () -> {
             while(producers.activeCount() > 0 || !buffer.isEmpty()) {
                 try {
                     Thread.sleep(500);
@@ -79,7 +77,7 @@ public class Main {
             buffer.finish();
         };
 
-        Thread finalStatisticsService = new Thread(statistics);
+        Thread finalStatisticsService = new Thread(finalStatistics);
         finalStatisticsService.start();
 
     }

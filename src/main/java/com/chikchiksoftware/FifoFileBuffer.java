@@ -15,14 +15,10 @@ import java.util.NoSuchElementException;
 
 public class FifoFileBuffer<T> implements java.io.Serializable {
     private final Object lock = new Object();
-    private final String fileName = new Timestamp(System.currentTimeMillis()).getTime() + ".tmp";
-    private File dataFile = new File(fileName);
+    private File dataFile = new File(new Timestamp(System.currentTimeMillis()).getTime() + ".tmp");
+    private final long dataFileMaxLength = /*104857600*/20480;
     private long count;
-    private long offset = 0;
-    private long consumed;
-    private final long dataFileMaxLength = 104857600;
-    private long currentDataFileLength;
-
+    private long offset;
 
     private ObjectOutputStream objectOutputStream = null;
     private ObjectInputStream objectInputStream = null;
@@ -36,12 +32,20 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
     }
 
     /**
-     * Inserts the specified element at the head of this buffer
+     * Inserts the specified element at the offset position of this buffer
      *
      * @param data the element to put
      */
     public void put(T data) {
         synchronized(lock) {
+            try {
+                while(dataFile.length() > dataFileMaxLength) {
+                    lock.wait();
+                }
+            }catch(InterruptedException e) {
+                System.err.println("Error waiting for file cleaning: ");
+                e.printStackTrace();
+            }
 
             try {
                 if(objectOutputStream == null) {
@@ -65,12 +69,12 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      * Takes element from the head of this buffer
      *
      * @return Data.toString
-     * @throws java.util.NoSuchElementException if element is null
+     * @throws EOFException if element is null
      */
     public T take() {
         synchronized(lock) {
             try {
-                while(isEmpty()) {
+                while(isEmpty() || dataFile.length() == 0) {
                     lock.wait();
                 }
             }catch(InterruptedException e) {
@@ -85,8 +89,9 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
                 }
 
                 currentFirstElement = (T) objectInputStream.readUnshared();
-            }catch(EOFException e) {
-                System.err.println("EOF " + e.getCause());
+
+            }catch(EOFException ignore) {
+                ignore.printStackTrace();
             }catch(IOException e) {
                 System.err.println("Error reading file: ");
                 e.printStackTrace();
@@ -94,9 +99,8 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
                 System.err.println("Object deserialization failed: " + e.getCause());
             }
 
-            System.out.println("Norm return");
+
             offset++;
-            consumed++;
             lock.notifyAll();
             return currentFirstElement;
         }
@@ -111,13 +115,19 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
         return (count == offset);
     }
 
+    /**
+     * Closes Input and Output streams
+     *
+     */
     public void finish() {
         try {
             if(objectOutputStream != null) {
                 objectOutputStream.close();
+                objectOutputStream = null;
             }
             if(objectInputStream != null) {
                 objectInputStream.close();
+                objectInputStream = null;
             }
         }catch(IOException e) {
             System.err.println("Error closing streams " + e.getCause());
@@ -148,7 +158,7 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      * @return long
      */
     public long getConsumedItems() {
-        return consumed;
+        return offset;
     }
 
     /**
@@ -183,15 +193,19 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
                     objects.add((T)objectInputStream.readUnshared());
                 }
             }catch(EOFException e) {
-                objectOutputStream = null;
-                objectInputStream = null;
+                finish();
                 dataFile.delete();
 
-                dataFile = new File(fileName);
+                dataFile = new File(new Timestamp(System.currentTimeMillis()).getTime() + ".tmp");
+                dataFile.deleteOnExit();
+
+                for(T object : objects) {
+                    put(object);
+                }
             }catch(ClassNotFoundException e) {
+                System.err.println("Error cleaning file: ");
                 e.printStackTrace();
             }
-
 
             lock.notifyAll();
         }

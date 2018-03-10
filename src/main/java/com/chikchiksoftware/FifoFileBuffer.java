@@ -74,7 +74,7 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
     public T take() throws IOException{
         synchronized(lock) {
             try {
-                while(isEmpty() || dataFile.length() == 0) {
+                while(isEmpty()) {
                     lock.wait();
                 }
             }catch(InterruptedException e) {
@@ -166,7 +166,7 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      *
      * @return long
      */
-    public long getDataFileLength() {
+    public synchronized long getDataFileLength() {
         return dataFile.length();
     }
 
@@ -184,13 +184,13 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      *
      * @throws IOException if file is unreachable
      */
-    public void fileDump() throws IOException {
+    public void fileDump() {
         synchronized(lock) {
             List<T> objects = new ArrayList<>();
 
             try {
                 while(true) {
-                    objects.add((T)objectInputStream.readUnshared());
+                    objects.add((T)objectInputStream.readObject());
                 }
             }catch(EOFException e) {
                 finish();
@@ -202,6 +202,12 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
                 for(T object : objects) {
                     put(object);
                 }
+            }catch(NullPointerException e) {
+                System.err.println("File is empty: ");
+                e.printStackTrace();
+            }catch(IOException e) {
+                System.err.println("File reading error: ");
+                e.printStackTrace();
             }catch(ClassNotFoundException e) {
                 System.err.println("Error cleaning file: ");
                 e.printStackTrace();

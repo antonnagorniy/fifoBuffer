@@ -71,7 +71,7 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      * @return Data.toString
      * @throws EOFException if element is null
      */
-    public T take() {
+    public T take() throws IOException{
         synchronized(lock) {
             try {
                 while(isEmpty() || dataFile.length() == 0) {
@@ -90,15 +90,15 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
 
                 currentFirstElement = (T) objectInputStream.readObject();
 
-            }catch(EOFException ignore) {
-                ignore.printStackTrace();
+
+            }/*catch(EOFException ignore) {
+                *//*ignore.printStackTrace();*//*
             }catch(IOException e) {
                 System.err.println("Error reading file: ");
                 e.printStackTrace();
-            }catch(ClassNotFoundException e) {
+            }*/catch(ClassNotFoundException e) {
                 System.err.println("Object deserialization failed: " + e.getCause());
             }
-
 
             offset++;
             lock.notifyAll();

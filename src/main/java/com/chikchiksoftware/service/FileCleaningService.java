@@ -22,14 +22,18 @@ public class FileCleaningService implements Runnable {
         while(true) {
             try {
                 if(buffer.getDataFileLength() < buffer.getDataFileMaxLength()) {
-                    Thread.sleep(1000);
+                    Thread.sleep(500);
                 }else {
+                    System.out.println("File current size: " + (buffer.getDataFileLength() / 1024) + "Kb");
                     System.out.println("File cleaning in progress...");
                     buffer.fileDump();
                     System.out.println("File cleaned.");
+                    System.out.println("File new size: " + (buffer.getDataFileLength() / 1024) + "Kb");
+                    Thread.sleep(500);
                 }
             }catch(Exception e) {
-                System.err.println("Service thread failed: " + e.getMessage());
+                System.err.println("Cleaning Service thread failed:");
+                e.printStackTrace();
             }
         }
     }

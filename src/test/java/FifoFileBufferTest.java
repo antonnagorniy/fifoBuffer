@@ -146,7 +146,7 @@ public class FifoFileBufferTest extends TestCase {
         assertEquals(
                 "Produced count is incorrect",
                 stringsList.size(),
-                stringBuffer.getProducedItems());
+                stringBuffer.getAllAddedItemsCount());
 
         stringBuffer.finish();
     }
@@ -157,7 +157,7 @@ public class FifoFileBufferTest extends TestCase {
             stringBuffer.put(str);
         }
 
-        long producedCount = stringBuffer.getProducedItems();
+        long producedCount = stringBuffer.getAllAddedItemsCount();
 
         try {
             for(int i = 0; i < stringsList.size(); i++) {
@@ -170,7 +170,7 @@ public class FifoFileBufferTest extends TestCase {
         assertEquals(
                 "Consumed count is incorrect.",
                 producedCount,
-                stringBuffer.getConsumedItems());
+                stringBuffer.getAllTakenItemsCount());
 
         stringBuffer.finish();
     }

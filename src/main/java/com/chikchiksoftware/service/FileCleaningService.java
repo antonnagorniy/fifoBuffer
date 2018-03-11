@@ -25,12 +25,14 @@ public class FileCleaningService implements Runnable {
             }catch(InterruptedException e) {
                 e.printStackTrace();
             }
-            while(buffer.getDataFileLength() > buffer.getDataFileMaxLength()) {
+            while(buffer.getDataFileLength() >= buffer.getDataFileMaxLength()) {
+                System.out.println("==========================================");
                 System.out.println("File current size: " + (buffer.getDataFileLength() / 1024) + "Kb");
                 System.out.println("File cleaning in progress...");
                 buffer.fileDump();
                 System.out.println("File cleaned.");
                 System.out.println("File new size: " + (buffer.getDataFileLength() / 1024) + "Kb");
+                System.out.println("==========================================");
             }
 
 

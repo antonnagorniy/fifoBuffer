@@ -16,7 +16,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class FifoFileBuffer<T> implements java.io.Serializable {
     private final Object lock = new Object();
     private File dataFile = new File(new Timestamp(System.currentTimeMillis()).getTime() + ".dta");
-    private final long dataFileMaxLength = 104857600/*20480*//*1024*/;
+    private final long dataFileMaxLength = /*104857600*/20480/*1024*/;
     private long count;
     private long offset;
 
@@ -45,7 +45,7 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
     public void put(T data) {
         synchronized(lock) {
             if(data != null) {
-                if(isDataFileFull()) {
+                if(isDataFileFull() && getSize() != 0) {
                     cacheList.add(data);
                     lock.notifyAll();
                 }else {
@@ -81,7 +81,7 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
     public T take() throws IOException{
         synchronized(lock) {
             try {
-                while(isEmpty()) {
+                while(getSize() == 0) {
                     lock.wait();
                 }
             }catch(InterruptedException e) {
@@ -101,6 +101,7 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
                 System.err.println("Object deserialization failed: " + e.getCause());
             }
 
+            count--;
             offset++;
             lock.notifyAll();
             return currentFirstElement;
@@ -113,7 +114,7 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      * @return boolean
      */
     public boolean isEmpty() {
-        return (count == offset);
+        return (count == 0);
     }
 
     /**
@@ -144,7 +145,7 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      * @return long
      */
     public long getSize() {
-        return (count - offset);
+        return count;
     }
 
     /**
@@ -170,7 +171,7 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      *
      * @return long
      */
-    public long getDataFileLength() {
+    public synchronized long getDataFileLength() {
         return dataFile.length();
     }
 
@@ -207,26 +208,46 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      */
     public void fileDump() {
         synchronized(lock) {
-            if(isDataFileFull() && isEmpty()) {
+            if(isDataFileFull() && getSize() != 0) {
+                try {
+                    lock.wait();
+                }catch(InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }else if(isDataFileFull() && getSize() == 0) {
                 finish();
                 createNewEmptyDataFile();
 
                 for(T object : cacheList) {
-                    put(object);
+                    try {
+                        if(objectOutputStream == null) {
+                            objectOutputStream = new ObjectOutputStream(new FileOutputStream(dataFile, true));
+                        }
+                        objectOutputStream.writeObject(object);
+                        objectOutputStream.flush();
+                        count++;
+                    }catch(IOException e) {
+                        System.err.println("Error writing to file " + e.getCause());
+                    }catch(NoSuchElementException e) {
+                        System.err.println("Invalid input: " + e.getCause());
+                    }
                 }
 
                 cacheList.clear();
                 System.out.println("File cleaned.");
-            }else {
+                System.out.println("File size: " + (dataFile.length() / 1024));
+                lock.notifyAll();
+            }/*else {
                 try {
                     lock.wait();
                 }catch(InterruptedException e) {
                     System.err.print("File dump failed: ");
                     e.printStackTrace();
+                }finally {
+                    lock.notifyAll();
                 }
-            }
+            }*/
 
-            lock.notifyAll();
         }
     }
 }

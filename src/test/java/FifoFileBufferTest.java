@@ -96,10 +96,10 @@ public class FifoFileBufferTest extends TestCase {
 
         try {
             for(int i = 0; i < stringsList.size(); i++) {
-                    assertEquals(
-                            stringsList.get(i) + " is in incorrect order.",
-                            stringsList.get(i),
-                            stringBuffer.take());
+                assertEquals(
+                        stringsList.get(i) + " is in incorrect order.",
+                        stringsList.get(i),
+                        stringBuffer.take());
             }
         }catch(IOException e) {
             e.printStackTrace();
@@ -123,7 +123,7 @@ public class FifoFileBufferTest extends TestCase {
 
         try {
             for(int i = 0; i < itemsToTakeCount; i++) {
-                    stringBuffer.take();
+                stringBuffer.take();
             }
         }catch(IOException e) {
             e.printStackTrace();
@@ -146,7 +146,7 @@ public class FifoFileBufferTest extends TestCase {
         assertEquals(
                 "Produced count is incorrect",
                 stringsList.size(),
-                stringBuffer.getAllAddedItemsCount());
+                stringBuffer.getSize());
 
         stringBuffer.finish();
     }
@@ -157,11 +157,12 @@ public class FifoFileBufferTest extends TestCase {
             stringBuffer.put(str);
         }
 
-        long producedCount = stringBuffer.getAllAddedItemsCount();
+        long itemsCount = stringBuffer.getSize();
 
         try {
             for(int i = 0; i < stringsList.size(); i++) {
-                    stringBuffer.take();
+                stringBuffer.take();
+                itemsCount--;
             }
         }catch(IOException e) {
             e.printStackTrace();
@@ -169,8 +170,8 @@ public class FifoFileBufferTest extends TestCase {
 
         assertEquals(
                 "Consumed count is incorrect.",
-                producedCount,
-                stringBuffer.getAllTakenItemsCount());
+                itemsCount,
+                stringBuffer.getSize());
 
         stringBuffer.finish();
     }

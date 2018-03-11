@@ -58,7 +58,7 @@ public class Application {
         fileCleaningDaemon.start();
 
         Runnable finalStatistics = () -> {
-            while(producers.activeCount() > 0 || !buffer.isEmpty()) {
+            while(producers.activeCount() > 0 || /*!buffer.isEmpty()*/buffer.getSize() > 0) {
                 try {
                     Thread.sleep(500);
                 }catch(InterruptedException e) {
@@ -69,6 +69,8 @@ public class Application {
             long end = System.currentTimeMillis();
             System.out.println("==========================================");
             System.out.println("Totals:");
+            System.out.println("Producer data: " + Timer.getProducedItems());
+            System.out.println("Consumer data: " + Timer.getConsumedItems());
             System.out.println("Produced: " + buffer.getAllAddedItemsCount());
             System.out.println("Consumed: " + buffer.getAllTakenItemsCount());
             System.out.println("Time elapsed: " + TimeConversionService.millisToDHMS(end - start));

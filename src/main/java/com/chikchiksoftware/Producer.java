@@ -1,5 +1,7 @@
 package com.chikchiksoftware;
 
+import com.chikchiksoftware.service.Timer;
+
 import java.sql.Timestamp;
 
 
@@ -28,6 +30,7 @@ public class Producer implements Runnable {
         try {
             while((end - start) <= timeToWork) {
                 buffer.put(new Timestamp(System.currentTimeMillis()));
+                Timer.incProducedItems();
                 Thread.sleep(generateFrequencySeconds);
                 end = System.currentTimeMillis();
             }

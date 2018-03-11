@@ -69,8 +69,8 @@ public class Application {
             long end = System.currentTimeMillis();
             System.out.println("==========================================");
             System.out.println("Totals:");
-            System.out.println("Produced: " + buffer.getProducedItems());
-            System.out.println("Consumed: " + buffer.getConsumedItems());
+            System.out.println("Produced: " + buffer.getAllAddedItemsCount());
+            System.out.println("Consumed: " + buffer.getAllTakenItemsCount());
             System.out.println("Time elapsed: " + TimeConversionService.millisToDHMS(end - start));
             System.out.println("Data file length: " + (Math.round(buffer.getDataFileLength() / 1024)) + " Kb");
             System.out.println("==========================================");

@@ -1,7 +1,6 @@
 package com.chikchiksoftware;
 
 import java.io.IOException;
-import java.sql.Timestamp;
 
 /**
  * Created by
@@ -11,9 +10,9 @@ import java.sql.Timestamp;
  */
 public class Consumer implements Runnable {
 
-    private final FifoFileBuffer<Timestamp> buffer;
+    private final FifoFileBuffer buffer;
 
-    public Consumer(FifoFileBuffer<Timestamp> buffer) {
+    public Consumer(FifoFileBuffer buffer) {
         this.buffer = buffer;
     }
 
@@ -25,6 +24,7 @@ public class Consumer implements Runnable {
             }
         }catch(IOException e){
             System.err.println("Consumer down");
+            e.printStackTrace();
         }
 
 

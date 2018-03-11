@@ -15,8 +15,8 @@ import java.util.NoSuchElementException;
 
 public class FifoFileBuffer<T> implements java.io.Serializable {
     private final Object lock = new Object();
-    private File dataFile = new File(new Timestamp(System.currentTimeMillis()).getTime() + ".tmp");
-    private final long dataFileMaxLength = /*104857600*/20480;
+    private File dataFile = createNewEmptyDataFile();
+    private final long dataFileMaxLength = /*104857600*//*20480*/1024;
     private long count;
     private long offset;
 
@@ -39,7 +39,7 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
     public void put(T data) {
         synchronized(lock) {
             try {
-                while(dataFile.length() > dataFileMaxLength) {
+                while(isDataFileReadyToClean()) {
                     lock.wait();
                 }
             }catch(InterruptedException e) {
@@ -61,7 +61,6 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
             }finally {
                 lock.notifyAll();
             }
-
         }
     }
 
@@ -90,13 +89,7 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
 
                 currentFirstElement = (T) objectInputStream.readObject();
 
-
-            }/*catch(EOFException ignore) {
-                *//*ignore.printStackTrace();*//*
-            }catch(IOException e) {
-                System.err.println("Error reading file: ");
-                e.printStackTrace();
-            }*/catch(ClassNotFoundException e) {
+            }catch(ClassNotFoundException e) {
                 System.err.println("Object deserialization failed: " + e.getCause());
             }
 
@@ -116,7 +109,8 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
     }
 
     /**
-     * Closes Input and Output streams
+     * Closes Input and Output streams and
+     * deletes data file
      *
      */
     public void finish() {
@@ -181,37 +175,62 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
         return dataFileMaxLength;
     }
 
+    private File createNewEmptyDataFile() {
+        return new File(new Timestamp(System.currentTimeMillis()).getTime() + ".dta");
+
+    }
+
+    private boolean isDataFileReadyToClean() {
+        return (dataFile.length() >= dataFileMaxLength);
+    }
+
     /**
      * Dump data file when it reaches length limitation
      *
-     * @throws IOException if file is unreachable
+     *
      */
     public void fileDump() {
         synchronized(lock) {
             List<T> objects = new ArrayList<>();
 
-            try {
-                while(true) {
-                    objects.add((T)objectInputStream.readObject());
-                }
-            }catch(EOFException e) {
+            if(isEmpty()) {
                 finish();
+                dataFile = createNewEmptyDataFile();
+            }else if(count > offset) {
+                try {
+                    while(true) {
+                        objects.add((T) objectInputStream.readObject());
+                    }
+                }catch(EOFException e) {
+                    finish();
+                    dataFile = createNewEmptyDataFile();
 
-                dataFile = new File(new Timestamp(System.currentTimeMillis()).getTime() + ".tmp");
-                dataFile.deleteOnExit();
+                    for(T object : objects) {
+                        put(object);
+                    }
 
-                for(T object : objects) {
-                    put(object);
+                    /*try {
+                        if(dataFile.length() >= dataFileMaxLength) {
+                            lock.wait();
+                        }
+                    }catch(InterruptedException e1) {
+                        e1.printStackTrace();
+                    }*/
+                }catch(NullPointerException e) {
+                    /*try {
+                        lock.wait();
+                    }catch(InterruptedException e1) {
+                        e1.printStackTrace();
+                    }*/
+                    System.err.print("Nothing to take: ");
+                    e.printStackTrace();
+                }catch(IOException e) {
+                    System.err.println("File reading error: ");
+                    e.printStackTrace();
+                }catch(ClassNotFoundException e) {
+                    System.err.println("Error cleaning file: ");
+                    e.printStackTrace();
                 }
-            }catch(NullPointerException e) {
-                System.err.println("File is empty: ");
-                e.printStackTrace();
-            }catch(IOException e) {
-                System.err.println("File reading error: ");
-                e.printStackTrace();
-            }catch(ClassNotFoundException e) {
-                System.err.println("Error cleaning file: ");
-                e.printStackTrace();
             }
 
             lock.notifyAll();

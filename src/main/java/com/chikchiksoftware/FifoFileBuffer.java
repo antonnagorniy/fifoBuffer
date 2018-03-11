@@ -2,7 +2,9 @@ package com.chikchiksoftware;
 
 import java.io.*;
 import java.sql.Timestamp;
+import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Created by
@@ -14,9 +16,15 @@ import java.util.NoSuchElementException;
 public class FifoFileBuffer<T> implements java.io.Serializable {
     private final Object lock = new Object();
     private File dataFile = new File(new Timestamp(System.currentTimeMillis()).getTime() + ".dta");
-    private final long dataFileMaxLength = /*104857600*//*20480*/1024;
+    private final long dataFileMaxLength = 104857600/*20480*//*1024*/;
     private long count;
     private long offset;
+
+    /**
+     * Used as data store while Data file is in
+     * cleaning process
+     */
+    private final List<T> cacheList = new CopyOnWriteArrayList<>();
 
     private ObjectOutputStream objectOutputStream = null;
     private ObjectInputStream objectInputStream = null;
@@ -33,38 +41,34 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      * Inserts the specified element at the offset position of this buffer
      *
      * @param data the element to put
-     * @throws IllegalArgumentException if {@code data} is empty
      */
     public void put(T data) {
         synchronized(lock) {
             if(data != null) {
-                try {
-                    while(isDataFileFull() && !isEmpty()) {
-                        lock.wait();
-                    }
-                }catch(InterruptedException e) {
-                    System.err.println("Error waiting for file cleaning: ");
-                    e.printStackTrace();
-                }
-
-                try {
-                    if(objectOutputStream == null) {
-                        objectOutputStream = new ObjectOutputStream(new FileOutputStream(dataFile, true));
-                    }
-                    objectOutputStream.writeObject(data);
-                    objectOutputStream.flush();
-                    count++;
-                }catch(IOException e) {
-                    System.err.println("Error writing to file " + e.getCause());
-                }catch(NoSuchElementException e) {
-                    System.err.println("Invalid input: " + e.getCause());
-                }finally {
+                if(isDataFileFull()) {
+                    cacheList.add(data);
                     lock.notifyAll();
+                }else {
+                    try {
+                        if(objectOutputStream == null) {
+                            objectOutputStream = new ObjectOutputStream(new FileOutputStream(dataFile, true));
+                        }
+                        objectOutputStream.writeObject(data);
+                        objectOutputStream.flush();
+                        count++;
+                    }catch(IOException e) {
+                        System.err.println("Error writing to file " + e.getCause());
+                    }catch(NoSuchElementException e) {
+                        System.err.println("Invalid input: " + e.getCause());
+                    }finally {
+                        lock.notifyAll();
+                    }
                 }
             }else {
                 lock.notifyAll();
                 throw new IllegalArgumentException("Argument is empty.");
             }
+
         }
     }
 
@@ -148,7 +152,7 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      *
      * @return long
      */
-    public long getProducedItems() {
+    public long getAllAddedItemsCount() {
         return count;
     }
 
@@ -157,7 +161,7 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      *
      * @return long
      */
-    public long getConsumedItems() {
+    public long getAllTakenItemsCount() {
         return offset;
     }
 
@@ -179,23 +183,41 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
         return dataFileMaxLength;
     }
 
+    /**
+     * Creates new empty data file
+     *
+     */
     private void createNewEmptyDataFile() {
         dataFile = new File(new Timestamp(System.currentTimeMillis()).getTime() + ".dta");
 
     }
 
+    /**
+     * Checks if data file reached length limit
+     *
+     * @return
+     */
     public boolean isDataFileFull() {
         return (dataFile.length() >= dataFileMaxLength);
     }
 
     /**
-     * Dump data file when it reaches length limitation
-     *
+     * Dumps data file
      *
      */
     public void fileDump() {
         synchronized(lock) {
-            while(!isEmpty()) {
+            if(isDataFileFull() && isEmpty()) {
+                finish();
+                createNewEmptyDataFile();
+
+                for(T object : cacheList) {
+                    put(object);
+                }
+
+                cacheList.clear();
+                System.out.println("File cleaned.");
+            }else {
                 try {
                     lock.wait();
                 }catch(InterruptedException e) {
@@ -204,8 +226,6 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
                 }
             }
 
-            finish();
-            createNewEmptyDataFile();
             lock.notifyAll();
         }
     }

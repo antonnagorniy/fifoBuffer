@@ -14,7 +14,7 @@ import java.sql.Timestamp;
  * on 17.02.2018.
  */
 
-public class Main {
+public class Application {
 
     public static void main(String[] args) {
 
@@ -58,7 +58,7 @@ public class Main {
         fileCleaningDaemon.start();
 
         Runnable finalStatistics = () -> {
-            while(producers.activeCount() > 0 /*|| !buffer.isEmpty()*/) {
+            while(producers.activeCount() > 0 || !buffer.isEmpty()) {
                 try {
                     Thread.sleep(500);
                 }catch(InterruptedException e) {
@@ -67,13 +67,13 @@ public class Main {
             }
 
             long end = System.currentTimeMillis();
-            System.out.println("===================================");
+            System.out.println("==========================================");
             System.out.println("Totals:");
             System.out.println("Produced: " + buffer.getProducedItems());
             System.out.println("Consumed: " + buffer.getConsumedItems());
             System.out.println("Time elapsed: " + TimeConversionService.millisToDHMS(end - start));
             System.out.println("Data file length: " + (Math.round(buffer.getDataFileLength() / 1024)) + " Kb");
-            System.out.println("===================================");
+            System.out.println("==========================================");
             buffer.finish();
         };
 

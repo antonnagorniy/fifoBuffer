@@ -2,8 +2,6 @@ package com.chikchiksoftware;
 
 import java.io.*;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
@@ -15,7 +13,7 @@ import java.util.NoSuchElementException;
 
 public class FifoFileBuffer<T> implements java.io.Serializable {
     private final Object lock = new Object();
-    private File dataFile = createNewEmptyDataFile();
+    private File dataFile = new File(new Timestamp(System.currentTimeMillis()).getTime() + ".dta");
     private final long dataFileMaxLength = /*104857600*//*20480*/1024;
     private long count;
     private long offset;
@@ -35,31 +33,37 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      * Inserts the specified element at the offset position of this buffer
      *
      * @param data the element to put
+     * @throws IllegalArgumentException if {@code data} is empty
      */
     public void put(T data) {
         synchronized(lock) {
-            try {
-                while(isDataFileReadyToClean()) {
-                    lock.wait();
+            if(data != null) {
+                try {
+                    while(isDataFileFull() && !isEmpty()) {
+                        lock.wait();
+                    }
+                }catch(InterruptedException e) {
+                    System.err.println("Error waiting for file cleaning: ");
+                    e.printStackTrace();
                 }
-            }catch(InterruptedException e) {
-                System.err.println("Error waiting for file cleaning: ");
-                e.printStackTrace();
-            }
 
-            try {
-                if(objectOutputStream == null) {
-                    objectOutputStream = new ObjectOutputStream(new FileOutputStream(dataFile, true));
+                try {
+                    if(objectOutputStream == null) {
+                        objectOutputStream = new ObjectOutputStream(new FileOutputStream(dataFile, true));
+                    }
+                    objectOutputStream.writeObject(data);
+                    objectOutputStream.flush();
+                    count++;
+                }catch(IOException e) {
+                    System.err.println("Error writing to file " + e.getCause());
+                }catch(NoSuchElementException e) {
+                    System.err.println("Invalid input: " + e.getCause());
+                }finally {
+                    lock.notifyAll();
                 }
-                objectOutputStream.writeObject(data);
-                objectOutputStream.flush();
-                count++;
-            }catch(IOException e) {
-                System.err.println("Error writing to file " + e.getCause());
-            }catch(NoSuchElementException e) {
-                System.err.println("Invalid input: " + e.getCause());
-            }finally {
+            }else {
                 lock.notifyAll();
+                throw new IllegalArgumentException("Argument is empty.");
             }
         }
     }
@@ -162,7 +166,7 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      *
      * @return long
      */
-    public synchronized long getDataFileLength() {
+    public long getDataFileLength() {
         return dataFile.length();
     }
 
@@ -175,12 +179,12 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
         return dataFileMaxLength;
     }
 
-    private File createNewEmptyDataFile() {
-        return new File(new Timestamp(System.currentTimeMillis()).getTime() + ".dta");
+    private void createNewEmptyDataFile() {
+        dataFile = new File(new Timestamp(System.currentTimeMillis()).getTime() + ".dta");
 
     }
 
-    private boolean isDataFileReadyToClean() {
+    public boolean isDataFileFull() {
         return (dataFile.length() >= dataFileMaxLength);
     }
 
@@ -191,48 +195,17 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      */
     public void fileDump() {
         synchronized(lock) {
-            List<T> objects = new ArrayList<>();
-
-            if(isEmpty()) {
-                finish();
-                dataFile = createNewEmptyDataFile();
-            }else if(count > offset) {
+            while(!isEmpty()) {
                 try {
-                    while(true) {
-                        objects.add((T) objectInputStream.readObject());
-                    }
-                }catch(EOFException e) {
-                    finish();
-                    dataFile = createNewEmptyDataFile();
-
-                    for(T object : objects) {
-                        put(object);
-                    }
-
-                    /*try {
-                        if(dataFile.length() >= dataFileMaxLength) {
-                            lock.wait();
-                        }
-                    }catch(InterruptedException e1) {
-                        e1.printStackTrace();
-                    }*/
-                }catch(NullPointerException e) {
-                    /*try {
-                        lock.wait();
-                    }catch(InterruptedException e1) {
-                        e1.printStackTrace();
-                    }*/
-                    System.err.print("Nothing to take: ");
-                    e.printStackTrace();
-                }catch(IOException e) {
-                    System.err.println("File reading error: ");
-                    e.printStackTrace();
-                }catch(ClassNotFoundException e) {
-                    System.err.println("Error cleaning file: ");
+                    lock.wait();
+                }catch(InterruptedException e) {
+                    System.err.print("File dump failed: ");
                     e.printStackTrace();
                 }
             }
 
+            finish();
+            createNewEmptyDataFile();
             lock.notifyAll();
         }
     }

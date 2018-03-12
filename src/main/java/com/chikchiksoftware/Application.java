@@ -1,6 +1,5 @@
 package com.chikchiksoftware;
 
-import com.chikchiksoftware.service.FileCleaningService;
 import com.chikchiksoftware.service.TimeConversionService;
 import com.chikchiksoftware.service.Timer;
 import com.chikchiksoftware.service.UserInteractions;
@@ -30,7 +29,7 @@ public class Application {
 
         final long start = System.currentTimeMillis();
 
-        FifoFileBuffer<Timestamp> buffer = new FifoFileBuffer<>();
+        final FifoFileBuffer<Timestamp> buffer = new FifoFileBuffer<>(1024 /*104857600*/ /*1048576*/ /*20480*/);
         Timer serviceTimer = new Timer(buffer, start, interactions.getProducerTimeToWork());
 
         for(int i = 0; i < interactions.getProducersCount(); i++) {
@@ -53,10 +52,6 @@ public class Application {
             thread.start();
         }
 
-        Thread fileCleaningDaemon = new Thread(new FileCleaningService(buffer));
-        fileCleaningDaemon.setDaemon(true);
-        fileCleaningDaemon.start();
-
         Runnable finalStatistics = () -> {
             while(producers.activeCount() > 0 || !buffer.isEmpty()) {
                 try {
@@ -69,12 +64,15 @@ public class Application {
             long end = System.currentTimeMillis();
             System.out.println("==========================================");
             System.out.println("Totals:");
-            System.out.println("Produced: " + buffer.getAllAddedItemsCount());
-            System.out.println("Consumed: " + buffer.getAllTakenItemsCount());
+            System.out.println("Producer generated data count: " + Timer.getProducedItems());
+            System.out.println("Consumer taken data count: " + Timer.getConsumedItems());
+            System.out.println("Buffer added total count: " + buffer.getProduced());
+            System.out.println("Buffer taken total count: " + buffer.getConsumed());
+            System.out.println("Buffer last count value: " + buffer.getCount());
+            System.out.println("Buffer last offset value: " + buffer.getOffset());
             System.out.println("Time elapsed: " + TimeConversionService.millisToDHMS(end - start));
             System.out.println("Data file length: " + (Math.round(buffer.getDataFileLength() / 1024)) + " Kb");
             System.out.println("==========================================");
-            buffer.finish();
         };
 
         Thread finalStatisticsService = new Thread(finalStatistics);

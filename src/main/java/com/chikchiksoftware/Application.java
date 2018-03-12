@@ -29,7 +29,7 @@ public class Application {
 
         final long start = System.currentTimeMillis();
 
-        final FifoFileBuffer<Timestamp> buffer = new FifoFileBuffer<>(1024 /*104857600*/ /*1048576*/ /*20480*/);
+        final FifoFileBuffer<Timestamp> buffer = new FifoFileBuffer<>(1024, false);
         Timer serviceTimer = new Timer(buffer, start, interactions.getProducerTimeToWork());
 
         for(int i = 0; i < interactions.getProducersCount(); i++) {
@@ -68,8 +68,8 @@ public class Application {
             System.out.println("Consumer taken data count: " + Timer.getConsumedItems());
             System.out.println("Buffer added total count: " + buffer.getProduced());
             System.out.println("Buffer taken total count: " + buffer.getConsumed());
-            System.out.println("Buffer last count value: " + buffer.getCount());
-            System.out.println("Buffer last offset value: " + buffer.getOffset());
+            System.out.println("Buffer count value: " + buffer.getCount());
+            System.out.println("Buffer offset value: " + buffer.getOffset());
             System.out.println("Time elapsed: " + TimeConversionService.millisToDHMS(end - start));
             System.out.println("Data file length: " + (Math.round(buffer.getDataFileLength() / 1024)) + " Kb");
             System.out.println("==========================================");

@@ -1,7 +1,6 @@
 package com.chikchiksoftware;
 
 import java.io.*;
-import java.sql.Timestamp;
 import java.util.NoSuchElementException;
 
 /**
@@ -14,12 +13,13 @@ import java.util.NoSuchElementException;
 public class FifoFileBuffer<T> implements java.io.Serializable {
 
     private final Object lock = new Object();
-    private File dataFile = new File(new Timestamp(System.currentTimeMillis()).getTime() + ".dta");
+    private File dataFile;
     private final long dataFileMaxLength;
     private long count;
     private long offset;
     private long produced;
     private long consumed;
+    private final boolean createTempFile;
 
     private ObjectOutputStream objectOutputStream = null;
     private ObjectInputStream objectInputStream = null;
@@ -28,9 +28,10 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      * Creates an {@code FifoFileBuffer} with default params
      *
      */
-    public FifoFileBuffer(long bufferBytesLength) {
+    public FifoFileBuffer(long bufferBytesLength, boolean createTempFile) {
+        this.createTempFile = createTempFile;
+        createNewEmptyDataFile();
         this.dataFileMaxLength = bufferBytesLength;
-        this.dataFile.deleteOnExit();
     }
 
     /**
@@ -41,13 +42,6 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
     public void put(T data) {
         synchronized(lock) {
             if(data != null) {
-                if(isDataFileFull()) {
-                    try {
-                        lock.wait();
-                    }catch(InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
                 try {
                     if(!dataFile.exists()) {
                         createNewEmptyDataFile();
@@ -77,7 +71,7 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
     /**
      * Takes element from the head of this buffer
      *
-     * @return Data.toString
+     * @return T
      * @throws EOFException if file is empty
      */
     public T take() throws IOException{
@@ -112,7 +106,7 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
     }
 
     /**
-     * Checks if there are no taken elements
+     * Checks if there are no elements
      *
      * @return boolean
      */
@@ -161,7 +155,15 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      *
      */
     private void createNewEmptyDataFile() {
-        dataFile = new File(new Timestamp(System.currentTimeMillis()).getTime() + ".dta");
+        if(createTempFile) {
+            try {
+                dataFile = File.createTempFile("temp", ".tmp");
+            }catch(IOException e) {
+                e.printStackTrace();
+            }
+        }else {
+            dataFile = new File("dataBuffer.dta");
+        }
         dataFile.deleteOnExit();
     }
 
@@ -198,7 +200,7 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      * deletes data file
      *
      */
-    public void finish() {
+    private void finish() {
         try {
             if(objectOutputStream != null) {
                 objectOutputStream.close();
@@ -210,12 +212,11 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
             }
         }catch(IOException e) {
             System.err.println("Error closing streams " + e.getCause());
-        }finally {
-
         }
-        dataFile.delete();
+        if(dataFile.exists()) {
+            dataFile.delete();
+        }
         count = 0;
         offset = 0;
-        System.out.println("File cleaned.");
     }
 }

@@ -26,9 +26,9 @@ public class FifoFileBufferTest extends TestCase {
 
     @Before
     protected void setUp() {
-        timestampBuffer = new FifoFileBuffer<>(1024);
-        stringBuffer = new FifoFileBuffer<>(1024);
-        integerBuffer = new FifoFileBuffer<>(1024);
+        timestampBuffer = new FifoFileBuffer<>(1024, true);
+        stringBuffer = new FifoFileBuffer<>(1024, true);
+        integerBuffer = new FifoFileBuffer<>(1024, true);
         timestamp = new Timestamp(System.currentTimeMillis());
         testString = "TestString";
         integer = 1789;
@@ -164,9 +164,7 @@ public class FifoFileBufferTest extends TestCase {
 
     @After
     public void tearDown() {
-        timestampBuffer.finish();
-        stringBuffer.finish();
-        integerBuffer.finish();
+
     }
 
 }

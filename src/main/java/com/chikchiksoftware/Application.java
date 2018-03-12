@@ -53,7 +53,7 @@ public class Application {
         }
 
         Runnable finalStatistics = () -> {
-            while(producers.activeCount() > 0 || !buffer.isEmpty()) {
+            while(producers.activeCount() > 0 || (!buffer.isEmpty() && consumers.activeCount() > 0)) {
                 try {
                     Thread.sleep(500);
                 }catch(InterruptedException e) {

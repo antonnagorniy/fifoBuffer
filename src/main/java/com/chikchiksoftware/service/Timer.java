@@ -13,6 +13,8 @@ public class Timer implements Runnable {
     private final long start;
     private long end;
     private long workingTime;
+    private static long producedItems;
+    private static long consumedItems;
 
     public Timer(FifoFileBuffer buffer, long start, long workingTime) {
         this.buffer = buffer;
@@ -31,13 +33,28 @@ public class Timer implements Runnable {
 
             end = System.currentTimeMillis();
             System.out.println("==========================================");
-            System.out.println("Produced: " + buffer.getAllAddedItemsCount());
-            System.out.println("Consumed: " + buffer.getAllTakenItemsCount());
+            System.out.println("Produced: " + getProducedItems());
+            System.out.println("Consumed: " + getConsumedItems());
+            System.out.println("Buffer length: " + (buffer.getDataFileLength() / 1024));
             System.out.println("Working time: " + TimeConversionService.millisToDHMS(end - start));
             System.out.println("Producers remaining time to work: " + TimeConversionService.millisToDHMS((start + workingTime) - System.currentTimeMillis()));
             System.out.println("==========================================");
         }
     }
 
+    public synchronized static long getProducedItems() {
+        return producedItems;
+    }
 
+    public synchronized static void incProducedItems() {
+        Timer.producedItems++;
+    }
+
+    public synchronized static long getConsumedItems() {
+        return consumedItems;
+    }
+
+    public synchronized static void incConsumedItems() {
+        Timer.consumedItems++;
+    }
 }

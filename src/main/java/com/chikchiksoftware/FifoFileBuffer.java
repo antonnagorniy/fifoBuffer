@@ -15,8 +15,8 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
     private final Object lock = new Object();
     private File dataFile;
     private final long dataFileMaxLength;
-    private long count;
-    private long offset;
+    private volatile long count;
+    private volatile long offset;
     private long produced;
     private long consumed;
     private final boolean createTempFile;

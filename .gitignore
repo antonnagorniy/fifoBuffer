@@ -133,3 +133,4 @@ $RECYCLE.BIN/
 /data.tmp
 src/main/resources/
 target/
+*.dta

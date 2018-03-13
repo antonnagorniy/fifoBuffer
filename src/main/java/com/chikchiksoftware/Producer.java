@@ -1,5 +1,7 @@
 package com.chikchiksoftware;
 
+import com.chikchiksoftware.service.Timer;
+
 import java.sql.Timestamp;
 
 
@@ -11,11 +13,11 @@ import java.sql.Timestamp;
  */
 public class Producer implements Runnable {
 
-    private final FifoFileBuffer<Timestamp> buffer;
+    private final FifoFileBuffer buffer;
     private final long generateFrequencySeconds;
     private final long timeToWork;
 
-    public Producer(FifoFileBuffer<Timestamp> buffer, long generateFrequencySeconds, long timeToWork) {
+    public Producer(FifoFileBuffer buffer, long generateFrequencySeconds, long timeToWork) {
         this.buffer = buffer;
         this.generateFrequencySeconds = generateFrequencySeconds;
         this.timeToWork = timeToWork;
@@ -28,6 +30,7 @@ public class Producer implements Runnable {
         try {
             while((end - start) <= timeToWork) {
                 buffer.put(new Timestamp(System.currentTimeMillis()));
+                Timer.incProducedItems();
                 Thread.sleep(generateFrequencySeconds);
                 end = System.currentTimeMillis();
             }

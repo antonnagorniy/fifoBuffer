@@ -1,12 +1,7 @@
 package com.chikchiksoftware;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.sql.Timestamp;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.NoSuchElementException;
 
 /**
  * Created by
@@ -16,89 +11,102 @@ import java.util.stream.Stream;
  */
 
 public class FifoFileBuffer<T> implements java.io.Serializable {
-    private final Object lock;
-    private final String fileName = new Timestamp(System.currentTimeMillis()).getTime() + ".tmp";
-    private final File dataFile;
-    private long count;
-    private long offset;
-    private long consumed;
+
+    private final Object lock = new Object();
+    private File dataFile;
     private final long dataFileMaxLength;
+    private volatile long count;
+    private volatile long offset;
+    private long produced;
+    private long consumed;
+    private final boolean createTempFile;
+
+    private ObjectOutputStream objectOutputStream = null;
+    private ObjectInputStream objectInputStream = null;
 
     /**
      * Creates an {@code FifoFileBuffer} with default params
      *
      */
-    public FifoFileBuffer() {
-        lock = new Object();
-        this.dataFile = new File(fileName);
-        dataFile.deleteOnExit();
-        this.dataFileMaxLength = 104857600;
+    public FifoFileBuffer(long bufferBytesLength, boolean createTempFile) {
+        this.createTempFile = createTempFile;
+        createNewEmptyDataFile();
+        this.dataFileMaxLength = bufferBytesLength;
     }
 
     /**
-     * Inserts the specified element at the {@code offset} line of this buffer
+     * Inserts the specified element at the offset position of this buffer
      *
      * @param data the element to put
      */
     public void put(T data) {
         synchronized(lock) {
-            try {
-                while(getDataFileLength() > dataFileMaxLength) {
-                    lock.wait();
+            if(data != null) {
+                try {
+                    if(!dataFile.exists()) {
+                        createNewEmptyDataFile();
+                    }
+                    if(objectOutputStream == null) {
+                        objectOutputStream = new ObjectOutputStream(new FileOutputStream(dataFile, true));
+                    }
+                    objectOutputStream.writeObject(data);
+                    objectOutputStream.flush();
+                    count++;
+                    produced++;
+                }catch(IOException e) {
+                    System.err.println("Error writing to file " + e.getCause());
+                }catch(NoSuchElementException e) {
+                    System.err.println("Invalid input: " + e.getCause());
+                }finally {
+                    lock.notifyAll();
                 }
-            }catch(InterruptedException e) {
-                System.err.println("Put failed: " + e.getMessage());
-            }
-
-            try(FileWriter fileWriter = new FileWriter(dataFile, true);
-                BufferedWriter bufferedWriter = new BufferedWriter(fileWriter)) {
-
-                bufferedWriter.write(data.toString());
-                bufferedWriter.newLine();
-                bufferedWriter.flush();
-                count++;
-
-            }catch(IOException e) {
-                System.err.println("Put failed: " + e.getMessage());
-            }finally {
+            }else {
                 lock.notifyAll();
+                throw new IllegalArgumentException("Argument is empty.");
             }
+
         }
     }
 
     /**
      * Takes element from the head of this buffer
      *
-     * @return Data.toString
-     * @throws java.util.NoSuchElementException if element is null
+     * @return T
+     * @throws EOFException if file is empty
      */
-    public String take() {
+    public T take() throws IOException{
         synchronized(lock) {
             try {
-                while(getDataFileLength() > dataFileMaxLength) {
+                while(isEmpty()) {
+                    if(isDataFileFull()) {
+                        finish();
+                    }
                     lock.wait();
                 }
             }catch(InterruptedException e) {
-                System.err.println("Put failed: " + e.getMessage());
+                System.err.println("Error " + e.getMessage());
             }
 
-            String item = null;
+            T currentFirstElement = null;
 
-            try(Stream<String> lines = Files.lines(Paths.get(dataFile.getName()))) {
-                item = lines.skip(offset).findFirst().get();
-            }catch(IOException e) {
-                System.err.println("Take failed: " + e.getMessage());
+            try {
+                if(objectInputStream == null) {
+                    objectInputStream = new ObjectInputStream(new FileInputStream(dataFile));
+                }
+                currentFirstElement = (T) objectInputStream.readObject();
+                offset++;
+                consumed++;
+            }catch(ClassNotFoundException e) {
+                System.err.println("Object deserialization failed: " + e.getCause());
             }
 
-            offset++;
-            consumed++;
             lock.notifyAll();
-            return item;
+            return currentFirstElement;
         }
     }
 
     /**
-     * Checks if there are no taken elements
+     * Checks if there are no elements
      *
      * @return boolean
      */
@@ -120,7 +128,7 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      *
      * @return long
      */
-    public long getProducedItems() {
+    public long getCount() {
         return count;
     }
 
@@ -129,8 +137,8 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      *
      * @return long
      */
-    public long getConsumedItems() {
-        return consumed;
+    public long getOffset() {
+        return offset;
     }
 
     /**
@@ -143,34 +151,72 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
     }
 
     /**
-     * Get data file length limitation
+     * Creates new empty data file
      *
-     * @return long
      */
-    public long getDataFileMaxLength() {
-        return dataFileMaxLength;
+    private void createNewEmptyDataFile() {
+        if(createTempFile) {
+            try {
+                dataFile = File.createTempFile("temp", ".tmp");
+            }catch(IOException e) {
+                e.printStackTrace();
+            }
+        }else {
+            dataFile = new File("dataBuffer.dta");
+        }
+        dataFile.deleteOnExit();
     }
 
     /**
-     * Dump data file when it reaches length limitation
+     * Checks if data file reached length limit
      *
-     * @throws IOException if file is unreachable
+     * @return boolean
      */
-    public void fileDump() throws IOException {
-        synchronized(lock) {
-            List<String> fileLines;
+    private boolean isDataFileFull() {
+        return (dataFile.length() >= dataFileMaxLength);
+    }
 
-            try(Stream<String> lines = Files.lines(Paths.get(dataFile.getPath()))) {
-                fileLines = lines.skip(offset).collect(Collectors.toList());
+    /**
+     * For testing purposes
+     *
+     *
+     * @return count of all added elements
+     */
+    public long getProduced() {
+        return produced;
+    }
+
+    /**
+     * For testing purposes
+     *
+     * @return count of all taken elements
+     */
+    public long getConsumed() {
+        return consumed;
+    }
+
+    /**
+     * Closes Input and Output streams and
+     * deletes data file
+     *
+     */
+    private void finish() {
+        try {
+            if(objectOutputStream != null) {
+                objectOutputStream.close();
+                objectOutputStream = null;
             }
-
-            try(PrintWriter out = new PrintWriter(new FileWriter(dataFile))) {
-                fileLines.forEach(out::println);
-                out.flush();
+            if(objectInputStream != null) {
+                objectInputStream.close();
+                objectInputStream = null;
             }
-
-            offset = 0;
-            lock.notifyAll();
+        }catch(IOException e) {
+            System.err.println("Error closing streams " + e.getCause());
         }
+        if(dataFile.exists()) {
+            dataFile.delete();
+        }
+        count = 0;
+        offset = 0;
     }
 }

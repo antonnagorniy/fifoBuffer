@@ -29,7 +29,5 @@ public class Consumer implements Runnable {
             System.err.println("Consumer down");
             e.printStackTrace();
         }
-
-
     }
 }

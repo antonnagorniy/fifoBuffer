@@ -57,7 +57,7 @@ public class Application {
                 try {
                     Thread.sleep(500);
                 }catch(InterruptedException e) {
-                    System.err.println();
+                    System.err.println("Statistics service failed: " + e.getMessage());
                 }
             }
 

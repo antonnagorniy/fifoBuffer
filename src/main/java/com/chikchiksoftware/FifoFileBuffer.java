@@ -10,13 +10,13 @@ import java.util.NoSuchElementException;
  * on 17.02.2018.
  */
 
-public class FifoFileBuffer<T> implements java.io.Serializable {
+public class FifoFileBuffer<T extends Serializable> implements java.io.Serializable {
 
     private final Object lock = new Object();
     private File dataFile;
     private final long dataFileMaxLength;
-    private volatile long count;
-    private volatile long offset;
+    private long count;
+    private long offset;
     private long produced;
     private long consumed;
     private final boolean createTempFile;
@@ -27,6 +27,9 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
     /**
      * Creates an {@code FifoFileBuffer} with default params
      *
+     * @param bufferBytesLength length of data file
+     * @param createTempFile create temp file in system temp folder
+     *                       or file in app root folder
      */
     public FifoFileBuffer(long bufferBytesLength, boolean createTempFile) {
         this.createTempFile = createTempFile;
@@ -48,7 +51,9 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
                     }
                     if(objectOutputStream == null) {
                         objectOutputStream = new ObjectOutputStream(new FileOutputStream(dataFile, true));
+                        objectOutputStream.flush();
                     }
+
                     objectOutputStream.writeObject(data);
                     objectOutputStream.flush();
                     count++;
@@ -73,8 +78,9 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      *
      * @return T
      * @throws EOFException if file is empty
+     * @throws IOException
      */
-    public T take() throws IOException{
+    public T take() throws IOException {
         synchronized(lock) {
             try {
                 while(isEmpty()) {
@@ -87,21 +93,23 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
                 System.err.println("Error " + e.getMessage());
             }
 
-            T currentFirstElement = null;
+            T currentHead = null;
 
             try {
                 if(objectInputStream == null) {
                     objectInputStream = new ObjectInputStream(new FileInputStream(dataFile));
                 }
-                currentFirstElement = (T) objectInputStream.readObject();
+
+                currentHead = (T) objectInputStream.readObject();
                 offset++;
                 consumed++;
             }catch(ClassNotFoundException e) {
-                System.err.println("Object deserialization failed: " + e.getCause());
+                System.err.println("Object deserialization failed: ");
+                e.printStackTrace();
             }
 
             lock.notifyAll();
-            return currentFirstElement;
+            return currentHead;
         }
     }
 
@@ -111,7 +119,13 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      * @return boolean
      */
     public boolean isEmpty() {
-        return (count == offset);
+        synchronized(lock) {
+            try {
+                return (count == offset);
+            }finally {
+                lock.notifyAll();
+            }
+        }
     }
 
     /**
@@ -120,7 +134,13 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      * @return long
      */
     public long getSize() {
-        return (count - offset);
+        synchronized(lock) {
+            try {
+                return (count - offset);
+            }finally {
+                lock.notifyAll();
+            }
+        }
     }
 
     /**
@@ -129,7 +149,13 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      * @return long
      */
     public long getCount() {
-        return count;
+        synchronized(lock) {
+            try {
+                return count;
+            }finally {
+                lock.notifyAll();
+            }
+        }
     }
 
     /**
@@ -138,7 +164,13 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
      * @return long
      */
     public long getOffset() {
-        return offset;
+        synchronized(lock) {
+            try {
+                return offset;
+            }finally {
+                lock.notifyAll();
+            }
+        }
     }
 
     /**
@@ -158,11 +190,17 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
         if(createTempFile) {
             try {
                 dataFile = File.createTempFile("temp", ".tmp");
+                if(dataFile.exists()) {
+                    dataFile.delete();
+                }
             }catch(IOException e) {
                 e.printStackTrace();
             }
         }else {
             dataFile = new File("dataBuffer.dta");
+            if(dataFile.exists()) {
+                dataFile.delete();
+            }
         }
         dataFile.deleteOnExit();
     }
@@ -203,6 +241,7 @@ public class FifoFileBuffer<T> implements java.io.Serializable {
     private void finish() {
         try {
             if(objectOutputStream != null) {
+                objectOutputStream.flush();
                 objectOutputStream.close();
                 objectOutputStream = null;
             }

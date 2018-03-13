@@ -35,7 +35,6 @@ public class Timer implements Runnable {
             System.out.println("==========================================");
             System.out.println("Produced: " + getProducedItems());
             System.out.println("Consumed: " + getConsumedItems());
-            System.out.println("Buffer length: " + (buffer.getDataFileLength() / 1024));
             System.out.println("Working time: " + TimeConversionService.millisToDHMS(end - start));
             System.out.println("Producers remaining time to work: " + TimeConversionService.millisToDHMS((start + workingTime) - System.currentTimeMillis()));
             System.out.println("==========================================");

@@ -15,10 +15,10 @@ public class FifoFileBuffer<T extends Serializable> implements java.io.Serializa
     private final Object lock = new Object();
     private File dataFile;
     private final long dataFileMaxLength;
-    private long count;
-    private long offset;
-    private long produced;
-    private long consumed;
+    private volatile long count;
+    private volatile long offset;
+    private volatile long produced;
+    private volatile long consumed;
     private final boolean createTempFile;
 
     private ObjectOutputStream objectOutputStream = null;
@@ -119,13 +119,7 @@ public class FifoFileBuffer<T extends Serializable> implements java.io.Serializa
      * @return boolean
      */
     public boolean isEmpty() {
-        synchronized(lock) {
-            try {
-                return (count == offset);
-            }finally {
-                lock.notifyAll();
-            }
-        }
+        return (count == offset);
     }
 
     /**
@@ -134,13 +128,7 @@ public class FifoFileBuffer<T extends Serializable> implements java.io.Serializa
      * @return long
      */
     public long getSize() {
-        synchronized(lock) {
-            try {
-                return (count - offset);
-            }finally {
-                lock.notifyAll();
-            }
-        }
+        return (count - offset);
     }
 
     /**
@@ -149,13 +137,7 @@ public class FifoFileBuffer<T extends Serializable> implements java.io.Serializa
      * @return long
      */
     public long getCount() {
-        synchronized(lock) {
-            try {
-                return count;
-            }finally {
-                lock.notifyAll();
-            }
-        }
+        return count;
     }
 
     /**
@@ -164,13 +146,7 @@ public class FifoFileBuffer<T extends Serializable> implements java.io.Serializa
      * @return long
      */
     public long getOffset() {
-        synchronized(lock) {
-            try {
-                return offset;
-            }finally {
-                lock.notifyAll();
-            }
-        }
+        return offset;
     }
 
     /**

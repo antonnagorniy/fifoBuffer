@@ -29,7 +29,7 @@ public class Application {
 
         final long start = System.currentTimeMillis();
 
-        final FifoFileBuffer<Timestamp> buffer = new FifoFileBuffer<>(1024, false);
+        final FifoFileBuffer<Timestamp> buffer = new FifoFileBuffer<>(30000000, false);
         Timer serviceTimer = new Timer(buffer, start, interactions.getProducerTimeToWork());
 
         for(int i = 0; i < interactions.getProducersCount(); i++) {

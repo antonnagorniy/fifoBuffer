@@ -1,5 +1,8 @@
 package com.chikchiksoftware;
 
+import com.chikchiksoftware.service.DefaultLogger;
+import org.slf4j.Logger;
+
 import java.io.*;
 import java.util.NoSuchElementException;
 
@@ -12,6 +15,7 @@ import java.util.NoSuchElementException;
 
 public class FifoFileBuffer<T extends Serializable> implements java.io.Serializable {
 
+    private final Logger log = new DefaultLogger().getLogger();
     private final Object lock = new Object();
     private File dataFile;
     private final long dataFileMaxLength;
@@ -20,6 +24,7 @@ public class FifoFileBuffer<T extends Serializable> implements java.io.Serializa
     private volatile long produced;
     private volatile long consumed;
     private final boolean createTempFile;
+
 
     private ObjectOutputStream objectOutputStream = null;
     private ObjectInputStream objectInputStream = null;
@@ -58,10 +63,13 @@ public class FifoFileBuffer<T extends Serializable> implements java.io.Serializa
                     objectOutputStream.flush();
                     count++;
                     produced++;
+                    log.info("Object added.");
                 }catch(IOException e) {
                     System.err.println("Error writing to file " + e.getCause());
+                    log.error("Error writing to file", e);
                 }catch(NoSuchElementException e) {
                     System.err.println("Invalid input: " + e.getCause());
+                    log.error("Invalid input", e);
                 }finally {
                     lock.notifyAll();
                 }

@@ -36,8 +36,9 @@ public class DefaultLogger {
         DEFAULT_CONSOLE_APPENDER.setWriter(new PrintWriter(System.out));
         DEFAULT_CONSOLE_APPENDER.setLayout(layout);
         org.apache.log4j.Logger log = org.apache.log4j.Logger.getRootLogger();
-        log.setLevel(Level.toLevel(DEFAULT_LOG_LEVEL));
         log.addAppender(DEFAULT_CONSOLE_APPENDER);
+        log.setLevel(Level.toLevel(DEFAULT_LOG_LEVEL));
+
 
         return LoggerFactory.getLogger("");
     }

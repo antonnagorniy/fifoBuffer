@@ -15,7 +15,7 @@ import java.util.NoSuchElementException;
 
 public class FifoFileBuffer<T extends Serializable> implements java.io.Serializable {
 
-    private final Logger log = new DefaultLogger().getLogger();
+    private final Logger log = DefaultLogger.getLogger();
     private final Object lock = new Object();
     private File dataFile;
     private final long dataFileMaxLength;
@@ -33,8 +33,8 @@ public class FifoFileBuffer<T extends Serializable> implements java.io.Serializa
      * Creates an {@code FifoFileBuffer} with default params
      *
      * @param bufferBytesLength length of data file
-     * @param createTempFile create temp file in system temp folder
-     *                       or file in app root folder
+     * @param createTempFile    create temp file in system temp folder
+     *                          or file in app root folder
      */
     public FifoFileBuffer(long bufferBytesLength, boolean createTempFile) {
         this.createTempFile = createTempFile;
@@ -168,7 +168,6 @@ public class FifoFileBuffer<T extends Serializable> implements java.io.Serializa
 
     /**
      * Creates new empty data file
-     *
      */
     private void createNewEmptyDataFile() {
         if(createTempFile) {
@@ -201,7 +200,6 @@ public class FifoFileBuffer<T extends Serializable> implements java.io.Serializa
     /**
      * For testing purposes
      *
-     *
      * @return count of all added elements
      */
     public long getProduced() {
@@ -220,7 +218,6 @@ public class FifoFileBuffer<T extends Serializable> implements java.io.Serializa
     /**
      * Closes Input and Output streams and
      * deletes data file
-     *
      */
     private void finish() {
         try {

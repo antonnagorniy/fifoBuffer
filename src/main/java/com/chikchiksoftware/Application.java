@@ -1,9 +1,17 @@
 package com.chikchiksoftware;
 
+
+import com.chikchiksoftware.service.DefaultLogger;
 import com.chikchiksoftware.service.TimeConversionService;
 import com.chikchiksoftware.service.Timer;
 import com.chikchiksoftware.service.UserInteractions;
+import org.apache.log4j.DailyRollingFileAppender;
+import org.apache.log4j.Level;
+import org.apache.log4j.PatternLayout;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.sql.Timestamp;
 
 /**
@@ -15,11 +23,16 @@ import java.sql.Timestamp;
 
 public class Application {
 
+    private static Logger logger;
+
     public static void main(String[] args) {
 
         final UserInteractions interactions = new UserInteractions();
         final ThreadGroup producers = new ThreadGroup("Producers");
         final ThreadGroup consumers = new ThreadGroup("Consumers");
+
+        initLogger();
+        logger = DefaultLogger.getLogger();
 
         interactions.producersQuantityInput();
         interactions.consumersQuantityInput();
@@ -55,8 +68,10 @@ public class Application {
         Runnable finalStatistics = () -> {
             while(producers.activeCount() > 0 || (!buffer.isEmpty() && consumers.activeCount() > 0)) {
                 try {
+                    logger.info("Final stats " + Thread.currentThread().getName() + " goes to sleep");
                     Thread.sleep(500);
                 }catch(InterruptedException e) {
+
                     System.err.println("Statistics service failed: " + e.getMessage());
                 }
             }
@@ -78,5 +93,32 @@ public class Application {
         Thread finalStatisticsService = new Thread(finalStatistics);
         finalStatisticsService.start();
 
+    }
+
+    private static void initLogger() {
+        final String DEFAULT_LAYOUT = "%d{dd MMM yyyy HH:mm:ss,SSS} [%t] %p %m %n";
+        DailyRollingFileAppender fileAppender = null;
+        final String DEFAULT_LOG_FILE = "/home/kattaris/Documents/logs/logger.out";
+        final int DEFAULT_LOG_LEVEL = 5000;
+        PatternLayout layout = new PatternLayout(DEFAULT_LAYOUT);
+
+        try {
+            fileAppender = new DailyRollingFileAppender(layout, DEFAULT_LOG_FILE, "'.' yyyy-MM-dd-a");
+        }catch(IOException e) {
+            e.printStackTrace();
+        }
+
+        if(fileAppender != null) {
+            fileAppender.setName("FILE");
+            fileAppender.setAppend(false);
+        }
+
+        org.apache.log4j.Logger log = org.apache.log4j.Logger.getRootLogger();
+        log.addAppender(fileAppender);
+        log.setLevel(Level.toLevel(DEFAULT_LOG_LEVEL));
+
+
+        logger = LoggerFactory.getLogger(Application.class);
+        DefaultLogger.setLogger(logger);
     }
 }

@@ -15,7 +15,7 @@ import java.util.NoSuchElementException;
 
 public class FifoFileBuffer<T extends Serializable> implements java.io.Serializable {
 
-    private final Logger log = DefaultLogger.getLogger();
+    private static Logger logger;
     private final Object lock = new Object();
     private File dataFile;
     private final long dataFileMaxLength;
@@ -49,6 +49,7 @@ public class FifoFileBuffer<T extends Serializable> implements java.io.Serializa
      */
     public void put(T data) {
         synchronized(lock) {
+            logger = DefaultLogger.getLogger();
             if(data != null) {
                 try {
                     if(!dataFile.exists()) {
@@ -63,13 +64,13 @@ public class FifoFileBuffer<T extends Serializable> implements java.io.Serializa
                     objectOutputStream.flush();
                     count++;
                     produced++;
-                    log.info("Object added.");
+                    logger.info(data.toString() + " Object added.");
                 }catch(IOException e) {
                     System.err.println("Error writing to file " + e.getCause());
-                    log.error("Error writing to file", e);
+                    logger.error("Error writing to file", e);
                 }catch(NoSuchElementException e) {
                     System.err.println("Invalid input: " + e.getCause());
-                    log.error("Invalid input", e);
+                    logger.error("Invalid input", e);
                 }finally {
                     lock.notifyAll();
                 }

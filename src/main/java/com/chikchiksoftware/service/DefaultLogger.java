@@ -34,11 +34,12 @@ public class DefaultLogger {
         consoleAppender.setThreshold(Level.TRACE);
         consoleAppender.activateOptions();
 
-        org.apache.log4j.Logger log = org.apache.log4j.Logger.getLogger("DEFAULT");
+        org.apache.log4j.Logger log = org.apache.log4j.Logger.getLogger("");
         log.addAppender(consoleAppender);
-        /*log.setLevel(Level.toLevel(5000));*/
+        log.setLevel(Level.toLevel(5000));
 
-        return LoggerFactory.getLogger("DEFAULT");
+
+        return LoggerFactory.getLogger("");
     }
 
     /*private static Logger getDefaultLogger() {
@@ -59,4 +60,5 @@ public class DefaultLogger {
 
         return LoggerFactory.getLogger("FILE");
     }*/
+
 }

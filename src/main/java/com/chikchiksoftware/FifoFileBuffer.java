@@ -1,7 +1,12 @@
 package com.chikchiksoftware;
 
+
 import com.chikchiksoftware.service.DefaultLogger;
+import com.chikchiksoftware.service.EdgeRollingFileAppender;
+import org.apache.log4j.Level;
+import org.apache.log4j.PatternLayout;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.NoSuchElementException;
@@ -29,6 +34,12 @@ public class FifoFileBuffer<T extends Serializable> implements java.io.Serializa
     private ObjectOutputStream objectOutputStream = null;
     private ObjectInputStream objectInputStream = null;
 
+    {
+        initLogger();
+        logger = DefaultLogger.getLogger();
+
+    }
+
     /**
      * Creates an {@code FifoFileBuffer} with default params
      *
@@ -49,7 +60,7 @@ public class FifoFileBuffer<T extends Serializable> implements java.io.Serializa
      */
     public void put(T data) {
         synchronized(lock) {
-            logger = DefaultLogger.getLogger();
+
             if(data != null) {
                 try {
                     if(!dataFile.exists()) {
@@ -239,5 +250,32 @@ public class FifoFileBuffer<T extends Serializable> implements java.io.Serializa
         }
         count = 0;
         offset = 0;
+    }
+
+    private static void initLogger() {
+        final String DEFAULT_LAYOUT = "%d{dd MMM yyyy HH:mm:ss,SSS} [%t] %p: %m %n";
+        EdgeRollingFileAppender fileAppender = null;
+        final String DEFAULT_LOG_FILE = "/home/kattaris/Documents/logs/FifoFileBuffer.out";
+        final int DEFAULT_LOG_LEVEL = 5000;
+        PatternLayout layout = new PatternLayout(DEFAULT_LAYOUT);
+
+        try {
+            fileAppender = new EdgeRollingFileAppender(layout, DEFAULT_LOG_FILE, false);
+        }catch(IOException e) {
+            e.printStackTrace();
+        }
+
+        if(fileAppender != null) {
+            fileAppender.setName("FILE");
+            fileAppender.setMaxFileSize("1KB");
+            fileAppender.setThreshold(Level.TRACE);
+        }
+
+        org.apache.log4j.Logger log = org.apache.log4j.Logger.getLogger(FifoFileBuffer.class);
+        log.addAppender(fileAppender);
+        log.setLevel(Level.toLevel(DEFAULT_LOG_LEVEL));
+
+        logger = LoggerFactory.getLogger(FifoFileBuffer.class);
+        DefaultLogger.setLogger(logger);
     }
 }

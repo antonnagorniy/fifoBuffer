@@ -2,7 +2,7 @@ package com.chikchiksoftware;
 
 
 import com.chikchiksoftware.service.DefaultLogger;
-import com.chikchiksoftware.service.EdgeRollingFileAppender;
+import com.chikchiksoftware.service.RollingFileAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.PatternLayout;
 import org.slf4j.Logger;
@@ -254,13 +254,13 @@ public class FifoFileBuffer<T extends Serializable> implements java.io.Serializa
 
     private static void initLogger() {
         final String DEFAULT_LAYOUT = "%d{dd MMM yyyy HH:mm:ss,SSS} [%t] %p: %m %n";
-        EdgeRollingFileAppender fileAppender = null;
+        RollingFileAppender fileAppender = null;
         final String DEFAULT_LOG_FILE = "/home/kattaris/Documents/logs/FifoFileBuffer.out";
         final int DEFAULT_LOG_LEVEL = 5000;
         PatternLayout layout = new PatternLayout(DEFAULT_LAYOUT);
 
         try {
-            fileAppender = new EdgeRollingFileAppender(layout, DEFAULT_LOG_FILE, false);
+            fileAppender = new RollingFileAppender(layout, DEFAULT_LOG_FILE, false);
         }catch(IOException e) {
             e.printStackTrace();
         }

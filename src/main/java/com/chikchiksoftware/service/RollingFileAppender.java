@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.io.Writer;
 
-public class EdgeRollingFileAppender extends FileAppender {
+public class RollingFileAppender extends FileAppender {
 
     /**
      The default maximum file size is 10MB.
@@ -29,7 +29,7 @@ public class EdgeRollingFileAppender extends FileAppender {
     /**
      The default constructor simply calls its {@link
     FileAppender#FileAppender parents constructor}.  */
-    public EdgeRollingFileAppender() {
+    public RollingFileAppender() {
         super();
     }
 
@@ -42,7 +42,7 @@ public class EdgeRollingFileAppender extends FileAppender {
      appended to. Otherwise, the file desginated by
      <code>filename</code> will be truncated before being opened.
      */
-    public EdgeRollingFileAppender(Layout layout, String filename, boolean append)
+    public RollingFileAppender(Layout layout, String filename, boolean append)
             throws IOException {
         super(layout, filename, append);
     }
@@ -53,7 +53,7 @@ public class EdgeRollingFileAppender extends FileAppender {
      destination for this appender.
 
      <p>The file will be appended to.  */
-    public EdgeRollingFileAppender(Layout layout, String filename) throws IOException {
+    public RollingFileAppender(Layout layout, String filename) throws IOException {
         super(layout, filename);
     }
 
@@ -90,7 +90,7 @@ public class EdgeRollingFileAppender extends FileAppender {
      <code>File</code> is truncated with no backup files created.
 
      */
-    public // synchronization not necessary since doAppend is alreasy synched
+    public // synchronization not necessary since doAppend is already synched
     void rollOver() {
         File target;
         File file;
@@ -123,7 +123,7 @@ public class EdgeRollingFileAppender extends FileAppender {
             }
 
             if(renameSucceeded) {
-                // Rename fileName to fileName.1
+                // Rename fileName to fileName1
                 target = new File(fileName.replaceFirst(".out", "") + 1 + ".out");
 
                 this.closeFile(); // keep windows happy.

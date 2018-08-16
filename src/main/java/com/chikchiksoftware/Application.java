@@ -93,13 +93,13 @@ public class Application {
     }
 
     private static void initLogger() {
-        EdgeRollingFileAppender fileAppender = null;
+        RollingFileAppender fileAppender = null;
         final String DEFAULT_LAYOUT = "%d{dd MMM yyyy HH:mm:ss,SSS} [%t] %p: %m %n";
         final String DEFAULT_LOG_FILE = "/home/kattaris/Documents/logs/logger.out";
         final int DEFAULT_LOG_LEVEL = 25000;
 
         try {
-            fileAppender = new EdgeRollingFileAppender(
+            fileAppender = new RollingFileAppender(
                     new PatternLayout(DEFAULT_LAYOUT), DEFAULT_LOG_FILE, true);
         }catch(IOException e) {
             e.printStackTrace();
@@ -107,7 +107,7 @@ public class Application {
 
         if(fileAppender != null) {
             fileAppender.setName("FILE");
-            fileAppender.setMaxFileSize("1KB");
+            fileAppender.setMaxFileSize("100MB");
             fileAppender.setThreshold(Level.TRACE);
 
         }

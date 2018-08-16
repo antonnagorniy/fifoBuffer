@@ -1,5 +1,13 @@
 package com.chikchiksoftware;
 
+
+import com.chikchiksoftware.service.DefaultLogger;
+import com.chikchiksoftware.service.RollingFileAppender;
+import org.apache.log4j.Level;
+import org.apache.log4j.PatternLayout;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.*;
 import java.util.NoSuchElementException;
 
@@ -12,6 +20,7 @@ import java.util.NoSuchElementException;
 
 public class FifoFileBuffer<T extends Serializable> implements java.io.Serializable {
 
+    private static Logger logger;
     private final Object lock = new Object();
     private File dataFile;
     private final long dataFileMaxLength;
@@ -21,15 +30,22 @@ public class FifoFileBuffer<T extends Serializable> implements java.io.Serializa
     private volatile long consumed;
     private final boolean createTempFile;
 
+
     private ObjectOutputStream objectOutputStream = null;
     private ObjectInputStream objectInputStream = null;
+
+    {
+        initLogger();
+        logger = DefaultLogger.getLogger();
+
+    }
 
     /**
      * Creates an {@code FifoFileBuffer} with default params
      *
      * @param bufferBytesLength length of data file
-     * @param createTempFile create temp file in system temp folder
-     *                       or file in app root folder
+     * @param createTempFile    create temp file in system temp folder
+     *                          or file in app root folder
      */
     public FifoFileBuffer(long bufferBytesLength, boolean createTempFile) {
         this.createTempFile = createTempFile;
@@ -44,6 +60,7 @@ public class FifoFileBuffer<T extends Serializable> implements java.io.Serializa
      */
     public void put(T data) {
         synchronized(lock) {
+
             if(data != null) {
                 try {
                     if(!dataFile.exists()) {
@@ -58,10 +75,13 @@ public class FifoFileBuffer<T extends Serializable> implements java.io.Serializa
                     objectOutputStream.flush();
                     count++;
                     produced++;
+                    logger.info(data.toString() + " Object added.");
                 }catch(IOException e) {
                     System.err.println("Error writing to file " + e.getCause());
+                    logger.error("Error writing to file", e);
                 }catch(NoSuchElementException e) {
                     System.err.println("Invalid input: " + e.getCause());
+                    logger.error("Invalid input", e);
                 }finally {
                     lock.notifyAll();
                 }
@@ -160,7 +180,6 @@ public class FifoFileBuffer<T extends Serializable> implements java.io.Serializa
 
     /**
      * Creates new empty data file
-     *
      */
     private void createNewEmptyDataFile() {
         if(createTempFile) {
@@ -193,7 +212,6 @@ public class FifoFileBuffer<T extends Serializable> implements java.io.Serializa
     /**
      * For testing purposes
      *
-     *
      * @return count of all added elements
      */
     public long getProduced() {
@@ -212,7 +230,6 @@ public class FifoFileBuffer<T extends Serializable> implements java.io.Serializa
     /**
      * Closes Input and Output streams and
      * deletes data file
-     *
      */
     private void finish() {
         try {
@@ -233,5 +250,32 @@ public class FifoFileBuffer<T extends Serializable> implements java.io.Serializa
         }
         count = 0;
         offset = 0;
+    }
+
+    private static void initLogger() {
+        final String DEFAULT_LAYOUT = "%d{dd MMM yyyy HH:mm:ss,SSS} [%t] %p: %m %n";
+        RollingFileAppender fileAppender = null;
+        final String DEFAULT_LOG_FILE = "/home/kattaris/Documents/logs/FifoFileBuffer.out";
+        final int DEFAULT_LOG_LEVEL = 5000;
+        PatternLayout layout = new PatternLayout(DEFAULT_LAYOUT);
+
+        try {
+            fileAppender = new RollingFileAppender(layout, DEFAULT_LOG_FILE, false);
+        }catch(IOException e) {
+            e.printStackTrace();
+        }
+
+        if(fileAppender != null) {
+            fileAppender.setName("FILE");
+            fileAppender.setMaxFileSize("100MB");
+            fileAppender.setThreshold(Level.TRACE);
+        }
+
+        org.apache.log4j.Logger log = org.apache.log4j.Logger.getLogger(FifoFileBuffer.class);
+        log.addAppender(fileAppender);
+        log.setLevel(Level.toLevel(DEFAULT_LOG_LEVEL));
+
+        logger = LoggerFactory.getLogger(FifoFileBuffer.class);
+        DefaultLogger.setLogger(logger);
     }
 }

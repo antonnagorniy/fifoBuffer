@@ -1,9 +1,13 @@
 package com.chikchiksoftware;
 
-import com.chikchiksoftware.service.TimeConversionService;
-import com.chikchiksoftware.service.Timer;
-import com.chikchiksoftware.service.UserInteractions;
 
+import com.chikchiksoftware.service.*;
+import org.apache.log4j.Level;
+import org.apache.log4j.PatternLayout;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 import java.sql.Timestamp;
 
 /**
@@ -15,11 +19,17 @@ import java.sql.Timestamp;
 
 public class Application {
 
+    private static Logger logger;
+
     public static void main(String[] args) {
+
+        initLogger();
+        logger = DefaultLogger.getLogger();
 
         final UserInteractions interactions = new UserInteractions();
         final ThreadGroup producers = new ThreadGroup("Producers");
         final ThreadGroup consumers = new ThreadGroup("Consumers");
+
 
         interactions.producersQuantityInput();
         interactions.consumersQuantityInput();
@@ -55,8 +65,10 @@ public class Application {
         Runnable finalStatistics = () -> {
             while(producers.activeCount() > 0 || (!buffer.isEmpty() && consumers.activeCount() > 0)) {
                 try {
+                    logger.info("Final stats goes to sleep");
                     Thread.sleep(500);
                 }catch(InterruptedException e) {
+                    logger.error("Statistics service failed: ",  e);
                     System.err.println("Statistics service failed: " + e.getMessage());
                 }
             }
@@ -78,5 +90,33 @@ public class Application {
         Thread finalStatisticsService = new Thread(finalStatistics);
         finalStatisticsService.start();
 
+    }
+
+    private static void initLogger() {
+        RollingFileAppender fileAppender = null;
+        final String DEFAULT_LAYOUT = "%d{dd MMM yyyy HH:mm:ss,SSS} [%t] %p: %m %n";
+        final String DEFAULT_LOG_FILE = "/home/kattaris/Documents/logs/logger.out";
+        final int DEFAULT_LOG_LEVEL = 25000;
+
+        try {
+            fileAppender = new RollingFileAppender(
+                    new PatternLayout(DEFAULT_LAYOUT), DEFAULT_LOG_FILE, true);
+        }catch(IOException e) {
+            e.printStackTrace();
+        }
+
+        if(fileAppender != null) {
+            fileAppender.setName("FILE");
+            fileAppender.setMaxFileSize("100MB");
+            fileAppender.setThreshold(Level.TRACE);
+
+        }
+
+        org.apache.log4j.Logger log = org.apache.log4j.Logger.getLogger(Application.class);
+        log.addAppender(fileAppender);
+        log.setLevel(Level.toLevel(20000));
+
+        logger = LoggerFactory.getLogger(Application.class);
+        DefaultLogger.setLogger(logger);
     }
 }

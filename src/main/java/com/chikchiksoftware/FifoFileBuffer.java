@@ -267,7 +267,7 @@ public class FifoFileBuffer<T extends Serializable> implements java.io.Serializa
 
         if(fileAppender != null) {
             fileAppender.setName("FILE");
-            fileAppender.setMaxFileSize("1KB");
+            fileAppender.setMaxFileSize("100MB");
             fileAppender.setThreshold(Level.TRACE);
         }
 

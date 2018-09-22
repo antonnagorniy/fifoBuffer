@@ -2,7 +2,7 @@ package com.chikchiksoftware;
 
 
 import com.chikchiksoftware.service.DefaultLogger;
-import com.chikchiksoftware.service.RollingFileAppender;
+import com.chikchiksoftware.service.RollingFileAppenderWrapper;
 import org.apache.log4j.Level;
 import org.apache.log4j.PatternLayout;
 import org.slf4j.Logger;
@@ -34,10 +34,6 @@ public class FifoFileBuffer<T extends Serializable> implements java.io.Serializa
     private ObjectOutputStream objectOutputStream = null;
     private ObjectInputStream objectInputStream = null;
 
-    {
-        initLogger();
-        logger = DefaultLogger.getLogger();
-    }
 
     /**
      * Creates an {@code FifoFileBuffer} with default params
@@ -50,6 +46,8 @@ public class FifoFileBuffer<T extends Serializable> implements java.io.Serializa
         this.createTempFile = createTempFile;
         createNewEmptyDataFile();
         this.dataFileMaxLength = bufferBytesLength;
+        initLogger();
+        logger = DefaultLogger.getLogger();
     }
 
     /**
@@ -253,12 +251,12 @@ public class FifoFileBuffer<T extends Serializable> implements java.io.Serializa
 
     private static void initLogger() {
         final String layoutPattern = "%d{dd-MM-yyyy HH:mm:ss,SSS} [%t] %p: %m %n";
-        final String logfile = "/home/kattaris/Documents/logs/" + FifoFileBuffer.class.getSimpleName() + ".out";
+        final String logfile = "/logs/" + FifoFileBuffer.class.getSimpleName() + ".out";
         final int logLevel = 5000;
         PatternLayout layout = new PatternLayout(layoutPattern);
 
         try {
-            RollingFileAppender fileAppender = new RollingFileAppender(layout, logfile, false);
+            RollingFileAppenderWrapper fileAppender = new RollingFileAppenderWrapper(layout, logfile, false);
             fileAppender.setName("Buffer");
             fileAppender.setMaxFileSize("100MB");
             fileAppender.setThreshold(Level.TRACE);

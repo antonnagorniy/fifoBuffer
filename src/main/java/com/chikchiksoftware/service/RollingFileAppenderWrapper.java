@@ -2,6 +2,7 @@ package com.chikchiksoftware.service;
 
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.Layout;
+import org.apache.log4j.RollingFileAppender;
 import org.apache.log4j.helpers.CountingQuietWriter;
 import org.apache.log4j.helpers.LogLog;
 import org.apache.log4j.helpers.OptionConverter;
@@ -12,7 +13,7 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.io.Writer;
 
-public class RollingFileAppender extends FileAppender {
+public class RollingFileAppenderWrapper extends RollingFileAppender {
 
     /**
      The default maximum file size is 10MB.
@@ -29,12 +30,12 @@ public class RollingFileAppender extends FileAppender {
     /**
      The default constructor simply calls its {@link
     FileAppender#FileAppender parents constructor}.  */
-    public RollingFileAppender() {
+    public RollingFileAppenderWrapper() {
         super();
     }
 
     /**
-     Instantiate a RollingFileAppender and open the file designated by
+     Instantiate a RollingFileAppenderWrapper and open the file designated by
      <code>filename</code>. The opened filename will become the ouput
      destination for this appender.
 
@@ -42,7 +43,7 @@ public class RollingFileAppender extends FileAppender {
      appended to. Otherwise, the file desginated by
      <code>filename</code> will be truncated before being opened.
      */
-    public RollingFileAppender(Layout layout, String filename, boolean append)
+    public RollingFileAppenderWrapper(Layout layout, String filename, boolean append)
             throws IOException {
         super(layout, filename, append);
     }
@@ -53,7 +54,7 @@ public class RollingFileAppender extends FileAppender {
      destination for this appender.
 
      <p>The file will be appended to.  */
-    public RollingFileAppender(Layout layout, String filename) throws IOException {
+    public RollingFileAppenderWrapper(Layout layout, String filename) throws IOException {
         super(layout, filename);
     }
 
@@ -233,7 +234,7 @@ public class RollingFileAppender extends FileAppender {
     }
 
     /**
-     This method differentiates RollingFileAppender from its super
+     This method differentiates RollingFileAppenderWrapper from its super
      class.
 
      @since 0.9.0

@@ -95,11 +95,11 @@ public class Application {
     private static void initLogger() {
 
         final String layoutPattern = "%d{dd-MM-yyyy HH:mm:ss,SSS} [%t] %p: %m %n";
-        final String logFile = "/home/kattaris/Documents/logs/" + Application.class.getSimpleName() + ".out";
+        final String logFile = "/logs/" + Application.class.getSimpleName() + ".out";
         final int logLevel = 25000;
 
         try {
-            RollingFileAppender fileAppender = new RollingFileAppender(
+            RollingFileAppenderWrapper fileAppender = new RollingFileAppenderWrapper(
                     new PatternLayout(layoutPattern), logFile, true);
             fileAppender.setName("Application");
             fileAppender.setMaxFileSize("100MB");

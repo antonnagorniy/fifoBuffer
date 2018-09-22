@@ -93,30 +93,25 @@ public class Application {
     }
 
     private static void initLogger() {
-        RollingFileAppender fileAppender = null;
-        final String DEFAULT_LAYOUT = "%d{dd MMM yyyy HH:mm:ss,SSS} [%t] %p: %m %n";
-        final String DEFAULT_LOG_FILE = "/home/kattaris/Documents/logs/logger.out";
-        final int DEFAULT_LOG_LEVEL = 25000;
+
+        final String layoutPattern = "%d{dd-MM-yyyy HH:mm:ss,SSS} [%t] %p: %m %n";
+        final String logFile = "./logs/" + Application.class.getSimpleName() + ".out";
+        final int logLevel = 25000;
 
         try {
-            fileAppender = new RollingFileAppender(
-                    new PatternLayout(DEFAULT_LAYOUT), DEFAULT_LOG_FILE, true);
-        }catch(IOException e) {
-            e.printStackTrace();
-        }
-
-        if(fileAppender != null) {
-            fileAppender.setName("FILE");
+            RollingFileAppenderWrapper fileAppender = new RollingFileAppenderWrapper(
+                    new PatternLayout(layoutPattern), logFile, true);
+            fileAppender.setName("Application");
             fileAppender.setMaxFileSize("100MB");
             fileAppender.setThreshold(Level.TRACE);
 
+            org.apache.log4j.Logger log = org.apache.log4j.Logger.getLogger(Application.class);
+            log.addAppender(fileAppender);
+
+            logger = LoggerFactory.getLogger(Application.class);
+            DefaultLogger.setLogger(logger);
+        }catch(IOException e) {
+            e.printStackTrace();
         }
-
-        org.apache.log4j.Logger log = org.apache.log4j.Logger.getLogger(Application.class);
-        log.addAppender(fileAppender);
-        log.setLevel(Level.toLevel(20000));
-
-        logger = LoggerFactory.getLogger(Application.class);
-        DefaultLogger.setLogger(logger);
     }
 }

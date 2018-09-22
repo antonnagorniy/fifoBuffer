@@ -23,11 +23,12 @@ public class Consumer implements Runnable {
         try {
             while(true) {
                 System.out.println(Thread.currentThread().getName() + " Consumed " + buffer.take());
+
                 Timer.incConsumedItems();
             }
         }catch(IOException e){
-            System.err.println("Consumer down");
             e.printStackTrace();
         }
     }
+
 }

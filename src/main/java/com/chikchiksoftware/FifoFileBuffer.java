@@ -251,7 +251,7 @@ public class FifoFileBuffer<T extends Serializable> implements java.io.Serializa
 
     private static void initLogger() {
         final String layoutPattern = "%d{dd-MM-yyyy HH:mm:ss,SSS} [%t] %p: %m %n";
-        final String logfile = "/logs/" + FifoFileBuffer.class.getSimpleName() + ".out";
+        final String logfile = "./logs/" + FifoFileBuffer.class.getSimpleName() + ".out";
         final int logLevel = 5000;
         PatternLayout layout = new PatternLayout(layoutPattern);
 

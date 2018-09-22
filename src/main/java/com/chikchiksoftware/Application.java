@@ -95,7 +95,7 @@ public class Application {
     private static void initLogger() {
 
         final String layoutPattern = "%d{dd-MM-yyyy HH:mm:ss,SSS} [%t] %p: %m %n";
-        final String logFile = "/logs/" + Application.class.getSimpleName() + ".out";
+        final String logFile = "./logs/" + Application.class.getSimpleName() + ".out";
         final int logLevel = 25000;
 
         try {
